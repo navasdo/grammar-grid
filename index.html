@@ -196,10 +196,12 @@
           const [shake, setShake] = useState(false);
           const [showPopup, setShowPopup] = useState(true);
           const [isLoadingAudio, setIsLoadingAudio] = useState(false);
-          const [audioTutorial, setAudioTutorial] = useState(null);
-          const [audioStatement, setAudioStatement] = useState(null);
-          const [audioQuestion, setAudioQuestion] = useState(null);
-          const [audioFinished, setAudioFinished] = useState(null);
+          const audioUrls = useRef({
+            tutorial: null,
+            statement: null,
+            question: null,
+            finished: null
+          });
           const audioRef = useRef(new Audio());
 
           const correctSentences = [
@@ -207,7 +209,6 @@
             ["is", "the ice cream", "tasty"]
           ];
           
-          const sentenceString = sentence.map(w => w.text).join(' ');
           const formattedSentences = sentence.map((word, index) => (
             <span 
               key={index} 
@@ -240,24 +241,20 @@
             const isCorrect = correctSentences.some(correct => correct.join(' ') === currentSentence);
 
             if (isCorrect) {
-              setSentencesCompleted(prev => prev + 1);
-              if (sentencesCompleted === 0) {
+              const newSentencesCompleted = sentencesCompleted + 1;
+              setSentencesCompleted(newSentencesCompleted);
+
+              if (newSentencesCompleted === 1) {
                 // First correct sentence
-                if (currentSentence === "the ice cream is tasty") {
-                  audioRef.current.src = audioStatement;
-                  audioRef.current.play();
-                } else {
-                  audioRef.current.src = audioQuestion;
-                  audioRef.current.play();
-                }
-                handleReset(); // Words return to the bank
+                const audioKey = currentSentence === "the ice cream is tasty" ? "statement" : "question";
+                playAudio(audioUrls.current[audioKey], () => {
+                    handleReset();
+                });
               } else {
                 // Second correct sentence
-                audioRef.current.src = audioFinished;
-                audioRef.current.play();
-                setTimeout(() => {
+                playAudio(audioUrls.current.finished, () => {
                     onStartAssessment();
-                }, 4000); 
+                });
               }
             } else {
               // Incorrect, shake and reset
@@ -269,6 +266,16 @@
             }
           };
 
+          const playAudio = (url, onEnded) => {
+            if (url) {
+                audioRef.current.src = url;
+                audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
+                if (onEnded) {
+                    audioRef.current.onended = onEnded;
+                }
+            }
+          };
+
           const handleReset = () => {
             setSentence([]);
             setWords(words.map(w => ({ ...w, inSentence: false })));
@@ -276,13 +283,10 @@
 
           const handlePass = () => {
               setSentencesCompleted(0);
-              // In a full app, this would finalize the score for this question and move to the next.
-              // For the tutorial, we just reset.
               handleReset();
           };
 
-          const generateAndPlayAudio = async (text, setter) => {
-            setIsLoadingAudio(true);
+          const generateAudioUrl = async (text) => {
             const payload = {
               contents: [{ parts: [{ text: text }] }],
               generationConfig: {
@@ -295,40 +299,45 @@
               },
               model: "gemini-2.5-flash-preview-tts"
             };
-            const apiKey = "AIzaSyCmgouHfiXaHHK4f7FVNQ9hke2ujQ8YDRg";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
 
-            try {
-              const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              });
-              const result = await response.json();
-              const part = result?.candidates?.[0]?.content?.parts?.[0];
-              const audioData = part?.inlineData?.data;
-              const mimeType = part?.inlineData?.mimeType;
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            const part = result?.candidates?.[0]?.content?.parts?.[0];
+            const audioData = part?.inlineData?.data;
+            const mimeType = part?.inlineData?.mimeType;
 
-              if (audioData && mimeType && mimeType.startsWith("audio/")) {
-                const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10);
-                const pcmData = Uint8Array.from(atob(audioData), c => c.charCodeAt(0)).buffer;
-                const pcm16 = new Int16Array(pcmData);
-                const wavBlob = pcmToWav(pcm16, sampleRate);
-                const audioUrl = URL.createObjectURL(wavBlob);
-                setter(audioUrl);
-              }
-            } catch (e) {
-              console.error("Audio generation failed:", e);
-            } finally {
-              setIsLoadingAudio(false);
+            if (audioData && mimeType && mimeType.startsWith("audio/")) {
+              const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10);
+              const pcmData = Uint8Array.from(atob(audioData), c => c.charCodeAt(0)).buffer;
+              const pcm16 = new Int16Array(pcmData);
+              const wavBlob = pcmToWav(pcm16, sampleRate);
+              return URL.createObjectURL(wavBlob);
             }
+            return null;
           };
 
           useEffect(() => {
-            generateAndPlayAudio("Here are some words that can be made into two different sentences.  Click or drag them to the text area above to create a sentence, and I'll let you know if you're correct!", setAudioTutorial);
-            generateAndPlayAudio("You're right. That sentence tells me something.  Can you try another sentence that's asking me something?", setAudioStatement);
-            generateAndPlayAudio("You're right, that sentence asks me something.  Can you try telling me something?", setAudioQuestion);
-            generateAndPlayAudio("you've got it!  Now let’s do some more. For each question, you will make two sentences using the words given to you.  Both sentences have to be a complete thought that sounds right. Good luck!", setAudioFinished);
+            const loadAudio = async () => {
+              setIsLoadingAudio(true);
+              const urls = await Promise.all([
+                generateAudioUrl("Here are some words that can be made into two different sentences. Click or drag them to the text area above to create a sentence, and I'll let you know if you're correct!"),
+                generateAudioUrl("You're right. That sentence tells me something. Can you try another sentence that's asking me something?"),
+                generateAudioUrl("You're right, that sentence asks me something. Can you try telling me something?"),
+                generateAudioUrl("You've got it! Now let’s do some more. For each question, you will make two sentences using the words given to you. Both sentences have to be a complete thought that sounds right. Good luck!")
+              ]);
+              audioUrls.current.tutorial = urls[0];
+              audioUrls.current.statement = urls[1];
+              audioUrls.current.question = urls[2];
+              audioUrls.current.finished = urls[3];
+              setIsLoadingAudio(false);
+            };
+            loadAudio();
           }, []);
 
           // --- DATE LOGIC ---
@@ -354,7 +363,7 @@
                       <button 
                         onClick={() => { 
                           setShowPopup(false);
-                          if (audioTutorial) { audioRef.current.src = audioTutorial; audioRef.current.play(); }
+                          playAudio(audioUrls.current.tutorial);
                         }} 
                         className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"
                       >
