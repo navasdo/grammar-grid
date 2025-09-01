@@ -209,7 +209,7 @@
           };
 
           const handleCheck = () => {
-            if (sentence.length === 0) return;
+            if (sentence.length === 0) return; // Prevent check on empty sentence
             const currentSentence = sentence.map(w => w.text).join(' ');
             
             const isCorrect = correctSentences.some(correct => correct.join(' ') === currentSentence);
@@ -221,6 +221,7 @@
               if (newSentencesCompleted === 1) {
                 const audioToPlay = currentSentence === "the ice cream is tasty" ? audioRef.current.statement : audioRef.current.question;
                 playAudio(audioToPlay, () => {
+                    // Reset the words after the correct audio finishes
                     handleReset();
                 });
               } else {
@@ -235,11 +236,14 @@
                 });
               }
             } else {
+              // Incorrect sentence feedback
               setShake(true);
-              setTimeout(() => {
-                setShake(false);
-                handleReset();
-              }, 1000);
+              playAudio(audioRef.current.incorrect, () => {
+                  setTimeout(() => {
+                      setShake(false);
+                      handleReset();
+                  }, 1000);
+              });
             }
           };
 
@@ -267,6 +271,7 @@
             audioRef.current.question = new Audio("audio/question.wav");
             audioRef.current.finished = new Audio("audio/finished.wav");
             audioRef.current.twoOutOfTwo = new Audio("audio/2_out_of_2.wav");
+            audioRef.current.incorrect = new Audio("audio/incorrect.wav");
           }, []);
 
           // --- DATE LOGIC ---
