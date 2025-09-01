@@ -51,27 +51,34 @@
 <body>
     <div id="root"></div>
 
+    <!-- Question Data Block -->
+    <script id="question-data" type="application/json">
+    [
+        { "grade": "K", "id": 1, "words": ["the dog", "ran"], "correct": ["The dog ran."], "types": [], "required": 1 },
+        { "grade": "K", "id": 2, "words": ["I", "can", "jump", "high"], "correct": ["I can jump high."], "types": [], "required": 1 },
+        { "grade": "K", "id": 3, "words": ["the ball", "is", "big"], "correct": ["The ball is big.", "Is the ball big?"], "types": ["Interrogative"], "required": 2 },
+        { "grade": "K", "id": 4, "words": ["we", "play", "outside"], "correct": ["We play outside."], "types": [], "required": 1 },
+        { "grade": "K", "id": 5, "words": ["she", "has", "a", "hat"], "correct": ["She has a hat."], "types": [], "required": 1 },
+        { "grade": "K", "id": 6, "words": ["the cat", "is", "black"], "correct": ["The cat is black.", "Is the cat black?"], "types": ["Interrogative"], "required": 2 },
+        { "grade": "K", "id": 7, "words": ["he", "likes", "to", "read"], "correct": ["He likes to read."], "types": [], "required": 1 },
+        { "grade": "K", "id": 8, "words": ["I", "am", "sleepy"], "correct": ["I am sleepy."], "types": [], "required": 1 },
+        { "grade": "K", "id": 9, "words": ["the house", "is", "tall"], "correct": ["The house is tall.", "Is the house tall?"], "types": ["Interrogative"], "required": 2 },
+        { "grade": "K", "id": 10, "words": ["they", "are", "friends"], "correct": ["They are friends."], "types": [], "required": 1 },
+        { "grade": "K", "id": 11, "words": ["he", "went", "to the store"], "correct": ["He went to the store."], "types": [], "required": 1 },
+        { "grade": "K", "id": 12, "words": ["the sun", "is", "hot"], "correct": ["The sun is hot.", "Is the sun hot?"], "types": ["Interrogative"], "required": 2 },
+        { "grade": "K", "id": 13, "words": ["I", "see", "a", "bird"], "correct": ["I see a bird."], "types": [], "required": 1 },
+        { "grade": "K", "id": 14, "words": ["the car", "is", "red"], "correct": ["The car is red."], "types": [], "required": 1 },
+        { "grade": "K", "id": 15, "words": ["the stars", "are", "bright"], "correct": ["The stars are bright.", "Are the stars bright?"], "types": ["Interrogative"], "required": 2 }
+    ]
+    </script>
+
+
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
         // --- Data ---
-        const allQuestions = [
-            { grade: 'K', id: 1, words: ['the dog', 'ran'], correct: ['The dog ran.'], types: [], required: 1 },
-            { grade: 'K', id: 2, words: ['I', 'can', 'jump', 'high'], correct: ['I can jump high.'], types: [], required: 1 },
-            { grade: 'K', id: 3, words: ['the ball', 'is', 'big'], correct: ['The ball is big.', 'Is the ball big?'], types: ['Interrogative'], required: 2 },
-            { grade: 'K', id: 4, words: ['we', 'play', 'outside'], correct: ['We play outside.'], types: [], required: 1 },
-            { grade: 'K', id: 5, words: ['she', 'has', 'a', 'hat'], correct: ['She has a hat.'], types: [], required: 1 },
-            { grade: 'K', id: 6, words: ['the cat', 'is', 'black'], correct: ['The cat is black.', 'Is the cat black?'], types: ['Interrogative'], required: 2 },
-            { grade: 'K', id: 7, words: ['he', 'likes', 'to', 'read'], correct: ['He likes to read.'], types: [], required: 1 },
-            { grade: 'K', id: 8, words: ['I', 'am', 'sleepy'], correct: ['I am sleepy.'], types: [], required: 1 },
-            { grade: 'K', id: 9, words: ['the house', 'is', 'tall'], correct: ['The house is tall.', 'Is the house tall?'], types: ['Interrogative'], required: 2 },
-            { grade: 'K', id: 10, words: ['they', 'are', 'friends'], correct: ['They are friends.'], types: [], required: 1 },
-            { grade: 'K', id: 11, words: ['he', 'went', 'to the store'], correct: ['He went to the store.'], types: [], required: 1 },
-            { grade: 'K', id: 12, words: ['the sun', 'is', 'hot'], correct: ['The sun is hot.', 'Is the sun hot?'], types: ['Interrogative'], required: 2 },
-            { grade: 'K', id: 13, words: ['I', 'see', 'a', 'bird'], correct: ['I see a bird.'], types: [], required: 1 },
-            { grade: 'K', id: 14, words: ['the car', 'is', 'red'], correct: ['The car is red.'], types: [], required: 1 },
-            { grade: 'K', id: 15, words: ['the stars', 'are', 'bright'], correct: ['The stars are bright.', 'Are the stars bright?'], types: ['Interrogative'], required: 2 },
-        ];
+        // Load questions from the JSON data block in the HTML
+        const allQuestions = JSON.parse(document.getElementById('question-data').textContent);
 
         // --- Utility Functions ---
         const shuffleArray = (array) => {
@@ -86,7 +93,7 @@
 
         // --- Icon Components ---
         const IconSpinner = ({ className }) => ( <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle> <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path> </svg> );
-        const IconFullscreenEnter = () => ( <svg xmlns="http://www.w.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg> );
+        const IconFullscreenEnter = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg> );
         const IconFullscreenExit = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg> );
         const IconCheck = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> );
         const IconReset = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M22 11.5A10 10 0 0 0 12.5 3a9.99 9.99 0 0 0-6.2 2.3L2.5 9"/><path d="M2 12.5A10 10 0 0 0 11.5 21a9.99 9.99 0 0 0 6.2-2.3L21.5 15"/></svg> );
@@ -195,6 +202,7 @@
         // --- Assessment Setup Screen ---
         const AssessmentSetupScreen = ({ onStartAssessment }) => {
           const [examinerName, setExaminerName] = useState('');
+          const [studentName, setStudentName] = useState('');
           const [isMultiGrade, setIsMultiGrade] = useState(false);
           const [singleGrade, setSingleGrade] = useState('K');
           const [numQuestions, setNumQuestions] = useState(10);
@@ -211,10 +219,10 @@
               if (isMultiGrade) {
                   const grades = multiGrades.filter(g => g.questions > 0);
                   if (grades.length > 0 && totalMultiQuestions <= 10) {
-                      onStartAssessment({ examinerName, grades, isMultiGrade: true });
+                      onStartAssessment({ examinerName, studentName, grades, isMultiGrade: true });
                   }
               } else {
-                  onStartAssessment({ examinerName, grades: [{ grade: singleGrade, questions: numQuestions }], numQuestions, isMultiGrade: false });
+                  onStartAssessment({ examinerName, studentName, grades: [{ grade: singleGrade, questions: numQuestions }], numQuestions, isMultiGrade: false });
               }
           };
 
@@ -226,6 +234,12 @@
                 <div className="flex flex-col space-y-2">
                   <label htmlFor="examiner" className="text-lg font-semibold">Examiner Name</label>
                   <input id="examiner" type="text" value={examinerName} onChange={(e) => setExaminerName(e.target.value)} className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]" placeholder="Enter examiner's name" />
+                </div>
+
+                <div className="flex flex-col space-y-2">
+                  <label htmlFor="student" className="text-lg font-semibold">Student Name (Optional)</label>
+                  <input id="student" type="text" value={studentName} onChange={(e) => setStudentName(e.target.value)} className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]" placeholder="Enter student's name" />
+                   <p className="text-xs text-[#aea2a6] italic mt-1">This information is not stored and is FERPA compliant.</p>
                 </div>
                 
                 <div className={`flex flex-col space-y-2 ${isMultiGrade ? 'hidden' : ''}`}>
@@ -315,7 +329,12 @@
 
             const handleCheck = () => {
                 const sentenceText = currentSentence.join(' ');
-                const isCorrect = currentQuestion.correct.includes(sentenceText) && !completedSentences.includes(sentenceText);
+                
+                // Normalization function to remove capitalization and ending punctuation
+                const normalize = (str) => str.toLowerCase().replace(/[.?]$/, '').trim();
+                const normalizedUserSentence = normalize(sentenceText);
+
+                const isCorrect = currentQuestion.correct.some(correctAnswer => normalize(correctAnswer) === normalizedUserSentence) && !completedSentences.includes(sentenceText);
                 
                 if (isCorrect) {
                     setScore(s => s + 1);
@@ -437,7 +456,7 @@
                         <section>
                             <h2>Summary</h2>
                             <div class="info-grid">
-                                <p><strong>Student Name:</strong> _______________________</p>
+                                <p><strong>Student Name:</strong> ${settings.studentName || '_______________________'}</p>
                                 <p><strong>Examiner:</strong> ${settings.examinerName}</p>
                                 <p><strong>Date:</strong> ${date}</p>
                             </div>
@@ -492,6 +511,7 @@
                     <h2 className="text-3xl font-bold text-white">Assessment Complete</h2>
                     <div className="p-6 bg-[#8B87A1]/60 rounded-lg text-left max-w-md mx-auto">
                         <p className="text-lg"><strong className="text-[#C3B1E1]">Examiner:</strong> {settings.examinerName}</p>
+                        <p className="text-lg"><strong className="text-[#C3B1E1]">Student:</strong> {settings.studentName || 'N/A'}</p>
                         <p className="text-lg"><strong className="text-[#C3B1E1]">Final Score:</strong> <span className="font-bold text-2xl text-[#DA70D6]">{finalScore}/{totalPossible}</span> ({scorePercentage}%)</p>
                         <p className="text-lg"><strong className="text-[#C3B1E1]">Interrogative Errors:</strong> {struggledTypes.Interrogative}</p>
                         <p className="text-lg"><strong className="text-[#C3B1E1]">Negative Errors:</strong> {struggledTypes.Negative}</p>
