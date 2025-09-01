@@ -33,6 +33,19 @@
         .glow {
             animation: glowing-border 1.5s ease-in-out forwards;
         }
+        @keyframes word-pulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: none;
+            }
+            50% { 
+                transform: scale(1.1);
+                box-shadow: 0 0 15px rgba(218, 112, 214, 0.8), 0 0 30px rgba(195, 177, 225, 0.5);
+            }
+        }
+        .word-box.animate {
+            animation: word-pulse 2s ease-in-out forwards;
+        }
     </style>
 </head>
 <body>
@@ -161,6 +174,7 @@
           const [shake, setShake] = useState(false);
           const [showPopup, setShowPopup] = useState(true);
           const [isGlowing, setIsGlowing] = useState(false);
+          const [isWordBoxAnimated, setIsWordBoxAnimated] = useState(false);
 
           const audioRef = useRef({});
 
@@ -272,6 +286,8 @@
                         onClick={() => { 
                           setShowPopup(false);
                           playAudio(audioRef.current.tutorial, null);
+                          setIsWordBoxAnimated(true);
+                          setTimeout(() => setIsWordBoxAnimated(false), 2000);
                         }} 
                         className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"
                       >
@@ -308,7 +324,7 @@
                   <button
                     key={word.id}
                     onClick={() => handleWordClick(word.id)}
-                    className="word-box px-4 py-2 bg-[#AEA2A6]/50 text-[#dee2e6] rounded-lg shadow-sm font-semibold"
+                    className={`word-box px-4 py-2 bg-[#AEA2A6]/50 text-[#dee2e6] rounded-lg shadow-sm font-semibold ${isWordBoxAnimated ? 'animate' : ''}`}
                   >
                     {word.text}
                   </button>
