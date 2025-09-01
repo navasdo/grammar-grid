@@ -52,55 +52,66 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- Data ---
+        const allQuestions = [
+            { grade: 'K', id: 1, words: ['the dog', 'ran'], correct: ['The dog ran.'], types: [], required: 1 },
+            { grade: 'K', id: 2, words: ['I', 'can', 'jump', 'high'], correct: ['I can jump high.'], types: [], required: 1 },
+            { grade: 'K', id: 3, words: ['the ball', 'is', 'big'], correct: ['The ball is big.', 'Is the ball big?'], types: ['Interrogative'], required: 2 },
+            { grade: 'K', id: 4, words: ['we', 'play', 'outside'], correct: ['We play outside.'], types: [], required: 1 },
+            { grade: 'K', id: 5, words: ['she', 'has', 'a', 'hat'], correct: ['She has a hat.'], types: [], required: 1 },
+            { grade: 'K', id: 6, words: ['the cat', 'is', 'black'], correct: ['The cat is black.', 'Is the cat black?'], types: ['Interrogative'], required: 2 },
+            { grade: 'K', id: 7, words: ['he', 'likes', 'to', 'read'], correct: ['He likes to read.'], types: [], required: 1 },
+            { grade: 'K', id: 8, words: ['I', 'am', 'sleepy'], correct: ['I am sleepy.'], types: [], required: 1 },
+            { grade: 'K', id: 9, words: ['the house', 'is', 'tall'], correct: ['The house is tall.', 'Is the house tall?'], types: ['Interrogative'], required: 2 },
+            { grade: 'K', id: 10, words: ['they', 'are', 'friends'], correct: ['They are friends.'], types: [], required: 1 },
+            { grade: 'K', id: 11, words: ['he', 'went', 'to the store'], correct: ['He went to the store.'], types: [], required: 1 },
+            { grade: 'K', id: 12, words: ['the sun', 'is', 'hot'], correct: ['The sun is hot.', 'Is the sun hot?'], types: ['Interrogative'], required: 2 },
+            { grade: 'K', id: 13, words: ['I', 'see', 'a', 'bird'], correct: ['I see a bird.'], types: [], required: 1 },
+            { grade: 'K', id: 14, words: ['the car', 'is', 'red'], correct: ['The car is red.'], types: [], required: 1 },
+            { grade: 'K', id: 15, words: ['the stars', 'are', 'bright'], correct: ['The stars are bright.', 'Are the stars bright?'], types: ['Interrogative'], required: 2 },
+        ];
+
+        // --- Utility Functions ---
+        const shuffleArray = (array) => {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        };
 
         // --- Icon Components ---
-        const IconSpinner = ({ className }) => (
-          <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        );
-        
-        const IconFullscreenEnter = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-        );
-
-        const IconFullscreenExit = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
-        );
-        
-        const IconCheck = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        );
-        
-        const IconReset = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M22 11.5A10 10 0 0 0 12.5 3a9.99 9.99 0 0 0-6.2 2.3L2.5 9"/><path d="M2 12.5A10 10 0 0 0 11.5 21a9.99 9.99 0 0 0 6.2-2.3L21.5 15"/></svg>
-        );
+        const IconSpinner = ({ className }) => ( <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle> <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path> </svg> );
+        const IconFullscreenEnter = () => ( <svg xmlns="http://www.w.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg> );
+        const IconFullscreenExit = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg> );
+        const IconCheck = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> );
+        const IconReset = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M22 11.5A10 10 0 0 0 12.5 3a9.99 9.99 0 0 0-6.2 2.3L2.5 9"/><path d="M2 12.5A10 10 0 0 0 11.5 21a9.99 9.99 0 0 0 6.2-2.3L21.5 15"/></svg> );
+        const IconNext = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> );
+        const IconExport = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> );
 
         // --- Main App Component ---
         function App() {
-          const [screen, setScreen] = useState('setup'); // 'setup', 'app', 'results'
+          const [screen, setScreen] = useState('setup');
           const [isLoading, setIsLoading] = useState(false);
           const [error, setError] = useState(null);
           const [isFullscreen, setIsFullscreen] = useState(false);
+          const [assessmentSettings, setAssessmentSettings] = useState(null);
+          const [resultsData, setResultsData] = useState(null);
           
           const toggleFullscreen = () => {
             if (!document.fullscreenElement) {
-              document.documentElement.requestFullscreen().catch(err => {
-                setError("Fullscreen mode is not permitted in this view.");
-              });
-            } else {
-              if (document.exitFullscreen) {
-                document.exitFullscreen();
-              }
+              document.documentElement.requestFullscreen().catch(() => setError("Fullscreen not permitted."));
+            } else if (document.exitFullscreen) {
+              document.exitFullscreen();
             }
           };
 
           useEffect(() => {
-            const handleFullscreenChange = () => {
-              setIsFullscreen(!!document.fullscreenElement);
-            };
+            const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
             document.addEventListener('fullscreenchange', handleFullscreenChange);
             return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
           }, []);
@@ -112,418 +123,390 @@
             }
           }, [error]);
           
-          // Placeholder functions
-          const handleStart = () => setScreen('app');
-          const handleSubmit = () => setScreen('results');
-          const handleRestart = () => setScreen('setup');
+          const handleStart = (settings) => {
+            setAssessmentSettings(settings);
+            setScreen('app');
+          };
+          const handleSubmit = (results) => {
+            setResultsData(results);
+            setScreen('results');
+          };
+          const handleRestart = () => {
+            setAssessmentSettings(null);
+            setResultsData(null);
+            setScreen('setup');
+          };
 
           const renderScreen = () => {
             switch (screen) {
               case 'app':
-                return <MainAppScreen onSubmit={handleSubmit} />;
+                return <MainAppScreen onSubmit={handleSubmit} settings={assessmentSettings} />;
               case 'results':
-                return <ResultsScreen onRestart={handleRestart} />;
+                return <ResultsScreen onRestart={handleRestart} results={resultsData} />;
               case 'assessmentSetup':
                 return <AssessmentSetupScreen onStartAssessment={handleStart} />;
               case 'setup':
               default:
-                return <TutorialScreen onStartAssessment={() => setScreen('assessmentSetup')} isLoading={isLoading} />;
+                return <TutorialScreen onStartAssessment={() => setScreen('assessmentSetup')} />;
             }
           };
 
           return (
             <div className="bg-[#5B4B62] min-h-screen font-sans text-[#dee2e6] relative">
-              <button 
-                onClick={toggleFullscreen}
-                className="absolute top-4 left-4 z-10 p-2 rounded-full bg-[#8B87A1]/50 hover:bg-[#C3B1E1] transition text-[#dee2e6]"
-                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-              >
-                {isFullscreen ? <IconFullscreenExit /> : <IconFullscreenEnter />}
-              </button>
-               <a href="/" className="absolute top-4 right-4 z-10 p-1 rounded-full bg-[#8B87A1]/50 hover:bg-[#C3B1E1] transition" title="Back to Homepage">
-                    <img src="https://raw.githubusercontent.com/navasdo/oliver/main/navacite/gems/Navacite-Main.png" alt="Navacite Homepage" className="w-10 h-10 rounded-full"/>
-                </a>
+              <button onClick={toggleFullscreen} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-[#8B87A1]/50 hover:bg-[#C3B1E1] transition" title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}> {isFullscreen ? <IconFullscreenExit /> : <IconFullscreenEnter />} </button>
+              <a href="/" className="absolute top-4 right-4 z-10 p-1 rounded-full bg-[#8B87A1]/50 hover:bg-[#C3B1E1] transition" title="Back to Homepage"> <img src="https://raw.githubusercontent.com/navasdo/oliver/main/navacite/gems/Navacite-Main.png" alt="Navacite Homepage" className="w-10 h-10 rounded-full"/> </a>
               <div className="container mx-auto p-4 sm:p-6 lg:p-8">
                 <header className="text-center mb-8">
-                  <img 
-                    src="https://raw.githubusercontent.com/navasdo/grammar-grid/refs/heads/main/navacite-gg.png" 
-                    alt="App Gem" 
-                    className="w-48 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.7)]"
-                  />
+                  <img src="https://raw.githubusercontent.com/navasdo/grammar-grid/refs/heads/main/navacite-gg.png" alt="App Gem" className="w-48 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.7)]" />
                   <h1 className="text-4xl font-bold text-[7F00FF]">Grammar Grid</h1>
                   <p className="text-sm text-[#aea2a6] italic mt-2">Concept by Daniel Navas, M.A., CCC-SLP & Coded in Tandem with Google Gemini</p>
                 </header>
                 {error && <div className="text-red-400 bg-red-900/50 p-3 rounded-lg text-center my-4 max-w-4xl mx-auto">{error}</div>}
-                <main className="bg-[#8B87A1]/50 p-6 sm:p-8 rounded-2xl shadow-lg max-w-4xl mx-auto border border-[#AEA2A6]">
-                  {renderScreen()}
-                </main>
+                <main className="bg-[#8B87A1]/50 p-6 sm:p-8 rounded-2xl shadow-lg max-w-4xl mx-auto border border-[#AEA2A6]"> {renderScreen()} </main>
               </div>
             </div>
           );
         }
 
-        // --- Tutorial Screen ---
+        // --- Tutorial Screen (Unchanged)---
         const TutorialScreen = ({ onStartAssessment, isLoading }) => {
-          const [words, setWords] = useState([
-            { id: 1, text: "tasty", inSentence: false },
-            { id: 2, text: "the ice cream", inSentence: false },
-            { id: 3, text: "is", inSentence: false }
-          ]);
+          const [words, setWords] = useState([ { id: 1, text: "tasty", inSentence: false }, { id: 2, text: "the ice cream", inSentence: false }, { id: 3, text: "is", inSentence: false } ]);
           const [sentence, setSentence] = useState([]);
           const [sentencesCompleted, setSentencesCompleted] = useState(0);
           const [shake, setShake] = useState(false);
           const [showPopup, setShowPopup] = useState(true);
           const [isGlowing, setIsGlowing] = useState(false);
           const [isWordBoxAnimated, setIsWordBoxAnimated] = useState(false);
-
           const audioRef = useRef({});
-
-          const correctSentences = [
-            ["the ice cream", "is", "tasty"],
-            ["is", "the ice cream", "tasty"]
-          ];
-          
-          const formattedSentences = sentence.map((word, index) => (
-            <span 
-              key={index} 
-              className="px-3 py-2 bg-[#AEA2A6]/50 text-[#5B4B62] rounded-lg cursor-default shadow-sm font-semibold"
-            >
-              {word.text}
-            </span>
-          ));
-
-          const getScoreColor = () => {
-            if (sentencesCompleted === 2) return 'text-green-500';
-            if (sentencesCompleted === 1) return 'text-orange-400';
-            return 'text-gray-400';
-          };
-          
+          const correctSentences = [ ["the ice cream", "is", "tasty"], ["is", "the ice cream", "tasty"] ];
+          const formattedSentences = sentence.map((word, index) => ( <span key={index} className="px-3 py-2 bg-[#AEA2A6]/50 text-[#5B4B62] rounded-lg cursor-default shadow-sm font-semibold"> {word.text} </span> ));
+          const getScoreColor = () => { if (sentencesCompleted === 2) return 'text-green-500'; if (sentencesCompleted === 1) return 'text-orange-400'; return 'text-gray-400'; };
           const getRemainingWords = () => words.filter(w => !w.inSentence);
-
-          const handleWordClick = (wordId) => {
-            const word = words.find(w => w.id === wordId);
-            if (word && !word.inSentence) {
-                setSentence(prev => [...prev, word]);
-                setWords(prev => prev.map(w => w.id === wordId ? { ...w, inSentence: true } : w));
-            }
-          };
-
-          const handleCheck = () => {
-            if (sentence.length === 0) return; // Prevent check on empty sentence
-            const currentSentence = sentence.map(w => w.text).join(' ');
-            
-            const isCorrect = correctSentences.some(correct => correct.join(' ') === currentSentence);
-
-            if (isCorrect) {
-              const newSentencesCompleted = sentencesCompleted + 1;
-              setSentencesCompleted(newSentencesCompleted);
-
-              if (newSentencesCompleted === 1) {
-                const audioToPlay = currentSentence === "the ice cream is tasty" ? audioRef.current.statement : audioRef.current.question;
-                playAudio(audioToPlay, () => {
-                    // Reset the words after the correct audio finishes
-                    handleReset();
-                });
-              } else {
-                setIsGlowing(true);
-                playAudio(audioRef.current.twoOutOfTwo, () => {
-                  setTimeout(() => {
-                    setIsGlowing(false);
-                    playAudio(audioRef.current.finished, () => {
-                      onStartAssessment();
-                    });
-                  }, 1500);
-                });
-              }
-            } else {
-              // Incorrect sentence feedback
-              setShake(true);
-              playAudio(audioRef.current.incorrect, () => {
-                  setTimeout(() => {
-                      setShake(false);
-                      handleReset();
-                  }, 1000);
-              });
-            }
-          };
-
-          const playAudio = (audioElement, onEnded) => {
-            if (audioElement) {
-                audioElement.onended = onEnded;
-                audioElement.play().catch(e => console.error("Audio playback failed:", e));
-            }
-          };
-
-          const handleReset = () => {
-            setSentence([]);
-            setWords(words.map(w => ({ ...w, inSentence: false })));
-          };
-
-          const handlePass = () => {
-              setSentencesCompleted(0);
-              handleReset();
-          };
-
-          useEffect(() => {
-            // These are the links where you should place your .wav files.
-            audioRef.current.tutorial = new Audio("audio/tutorial.wav");
-            audioRef.current.statement = new Audio("audio/statement.wav");
-            audioRef.current.question = new Audio("audio/question.wav");
-            audioRef.current.finished = new Audio("audio/finished.wav");
-            audioRef.current.twoOutOfTwo = new Audio("audio/2_out_of_2.wav");
-            audioRef.current.incorrect = new Audio("audio/incorrect.wav");
-          }, []);
-
-          // --- DATE LOGIC ---
-          const currentDate = new Date().toLocaleDateString('en-US', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-          });
-
-          return (
-            <div className="space-y-8">
-              {/* Popup Modal */}
-              {showPopup && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-40">
-                  <div className="bg-[#5B4B62] p-8 rounded-2xl shadow-lg border border-[#AEA2A6] text-center max-w-sm">
-                    <p className="font-bold text-lg mb-4">Begin with tutorial?</p>
-                    <div className="flex justify-center space-x-4">
-                      <button 
-                        onClick={() => { 
-                          setShowPopup(false);
-                          playAudio(audioRef.current.tutorial, null);
-                          setIsWordBoxAnimated(true);
-                          setTimeout(() => setIsWordBoxAnimated(false), 2000);
-                        }} 
-                        className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"
-                      >
-                        Yes
-                      </button>
-                      <button 
-                        onClick={() => { setShowPopup(false); onStartAssessment(); }} 
-                        className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"
-                      >
-                        No
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Date Display */}
-              <div className="text-center p-3 bg-[#8B87A1]/50 text-[#C3B1E1] rounded-lg">
-                <p className="font-semibold">{currentDate}</p>
-              </div>
-              
-              <div className="text-center">
-                 <h2 className="text-2xl font-bold text-[#dee2e6]">Tutorial</h2>
-              </div>
-
-              {/* Sentence construction area */}
-              <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 transition-all duration-300 ${shake ? 'shake' : ''} ${isGlowing ? 'glow' : ''}`}>
-                {sentence.length > 0 ? formattedSentences : <span className="text-sm text-[#aea2a6] italic">Click words below to build your sentence...</span>}
-              </div>
-
-              {/* Word bank */}
-              <div className="p-4 rounded-lg flex flex-wrap justify-center gap-2 bg-[#8B87A1]/50">
-                {getRemainingWords().map(word => (
-                  <button
-                    key={word.id}
-                    onClick={() => handleWordClick(word.id)}
-                    className={`word-box px-4 py-2 bg-[#AEA2A6]/50 text-[#dee2e6] rounded-lg shadow-sm font-semibold ${isWordBoxAnimated ? 'animate' : ''}`}
-                  >
-                    {word.text}
-                  </button>
-                ))}
-              </div>
-
-              {/* Action buttons and score */}
-              <div className="flex items-center justify-center space-x-4 mt-8">
-                <button onClick={handleCheck} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition-transform transform hover:scale-105">
-                  <IconCheck />
-                </button>
-                <div className="flex flex-col items-center">
-                  <span className={`text-xl font-bold ${getScoreColor()}`}>
-                    {sentencesCompleted}/2
-                  </span>
-                  <p className="text-sm text-[#aea2a6] italic">Score</p>
-                </div>
-                <button onClick={handleReset} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition-transform transform hover:scale-105">
-                  <IconReset />
-                </button>
-                <button onClick={handlePass} className="px-6 py-4 bg-[#DA70D6] rounded-lg text-white font-bold hover:bg-[#C3B1E1] transition">
-                  Pass
-                </button>
-              </div>
-
-            </div>
-          );
+          const handleWordClick = (wordId) => { const word = words.find(w => w.id === wordId); if (word && !word.inSentence) { setSentence(prev => [...prev, word]); setWords(prev => prev.map(w => w.id === wordId ? { ...w, inSentence: true } : w)); } };
+          const handleCheck = () => { if (sentence.length === 0) return; const currentSentenceText = sentence.map(w => w.text).join(' '); const isCorrect = correctSentences.some(correct => correct.join(' ') === currentSentenceText); if (isCorrect) { const newSentencesCompleted = sentencesCompleted + 1; setSentencesCompleted(newSentencesCompleted); if (newSentencesCompleted === 1) { const audioToPlay = currentSentenceText === "the ice cream is tasty" ? audioRef.current.statement : audioRef.current.question; playAudio(audioToPlay, () => { handleReset(); }); } else { setIsGlowing(true); playAudio(audioRef.current.twoOutOfTwo, () => { setTimeout(() => { setIsGlowing(false); playAudio(audioRef.current.finished, () => { onStartAssessment(); }); }, 1500); }); } } else { setShake(true); playAudio(audioRef.current.incorrect, () => { setTimeout(() => { setShake(false); handleReset(); }, 1000); }); } };
+          const playAudio = (audioElement, onEnded) => { if (audioElement) { audioElement.onended = onEnded; audioElement.play().catch(e => console.error("Audio playback failed:", e)); } };
+          const handleReset = () => { setSentence([]); setWords(words.map(w => ({ ...w, inSentence: false }))); };
+          const handlePass = () => { setSentencesCompleted(0); handleReset(); };
+          useEffect(() => { audioRef.current.tutorial = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/tutorial.wav"); audioRef.current.statement = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/statement.wav"); audioRef.current.question = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/question.wav"); audioRef.current.finished = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/finished.wav"); audioRef.current.twoOutOfTwo = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/2_out_of_2.wav"); audioRef.current.incorrect = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/incorrect.wav"); }, []);
+          const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          return ( <div className="space-y-8"> {showPopup && ( <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-40"> <div className="bg-[#5B4B62] p-8 rounded-2xl shadow-lg border border-[#AEA2A6] text-center max-w-sm"> <p className="font-bold text-lg mb-4">Begin with tutorial?</p> <div className="flex justify-center space-x-4"> <button onClick={() => { setShowPopup(false); playAudio(audioRef.current.tutorial, null); setIsWordBoxAnimated(true); setTimeout(() => setIsWordBoxAnimated(false), 2000); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> Yes </button> <button onClick={() => { setShowPopup(false); onStartAssessment(); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> No </button> </div> </div> </div> )} <div className="text-center p-3 bg-[#8B87A1]/50 text-[#C3B1E1] rounded-lg"> <p className="font-semibold">{currentDate}</p> </div> <div className="text-center"> <h2 className="text-2xl font-bold text-[#dee2e6]">Tutorial</h2> </div> <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 transition-all duration-300 ${shake ? 'shake' : ''} ${isGlowing ? 'glow' : ''}`}> {sentence.length > 0 ? formattedSentences : <span className="text-sm text-[#aea2a6] italic">Click words below to build your sentence...</span>} </div> <div className="p-4 rounded-lg flex flex-wrap justify-center gap-2 bg-[#8B87A1]/50"> {getRemainingWords().map(word => ( <button key={word.id} onClick={() => handleWordClick(word.id)} className={`word-box px-4 py-2 bg-[#AEA2A6]/50 text-[#dee2e6] rounded-lg shadow-sm font-semibold ${isWordBoxAnimated ? 'animate' : ''}`}> {word.text} </button> ))} </div> <div className="flex items-center justify-center space-x-4 mt-8"> <button onClick={handleCheck} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition-transform transform hover:scale-105"> <IconCheck /> </button> <div className="flex flex-col items-center"> <span className={`text-xl font-bold ${getScoreColor()}`}> {sentencesCompleted}/2 </span> <p className="text-sm text-[#aea2a6] italic">Score</p> </div> <button onClick={handleReset} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition-transform transform hover:scale-105"> <IconReset /> </button> <button onClick={handlePass} className="px-6 py-4 bg-[#DA70D6] rounded-lg text-white font-bold hover:bg-[#C3B1E1] transition"> Pass </button> </div> </div> );
         };
-
+        
         // --- Assessment Setup Screen ---
         const AssessmentSetupScreen = ({ onStartAssessment }) => {
           const [examinerName, setExaminerName] = useState('');
-          const [gradeLevel, setGradeLevel] = useState('1');
-          const [numQuestions, setNumQuestions] = useState(10);
           const [isMultiGrade, setIsMultiGrade] = useState(false);
+          const [singleGrade, setSingleGrade] = useState('K');
+          const [numQuestions, setNumQuestions] = useState(10);
+          const [multiGrades, setMultiGrades] = useState([ { id: 1, grade: 'K', questions: 0 }, { id: 2, grade: '1', questions: 0 }, { id: 3, grade: '2', questions: 0 } ]);
           
-          // New state for multiple grade selection
-          const [multiGrades, setMultiGrades] = useState([
-            { id: 1, grade: '1', questions: 0 },
-            { id: 2, grade: '2', questions: 0 },
-            { id: 3, grade: '3', questions: 0 }
-          ]);
-          
-          const totalQuestions = multiGrades.reduce((sum, item) => sum + parseInt(item.questions), 0);
-          const questionsLeft = 10 - totalQuestions;
+          const totalMultiQuestions = useMemo(() => multiGrades.reduce((sum, item) => sum + Number(item.questions || 0), 0), [multiGrades]);
+          const questionsLeft = 10 - totalMultiQuestions;
 
           const handleMultiGradeChange = (id, field, value) => {
-            setMultiGrades(prev => 
-              prev.map(item => item.id === id ? { ...item, [field]: value } : item)
-            );
+            setMultiGrades(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
           };
+          
+          const handleStart = () => {
+              if (isMultiGrade) {
+                  const grades = multiGrades.filter(g => g.questions > 0);
+                  if (grades.length > 0 && totalMultiQuestions <= 10) {
+                      onStartAssessment({ examinerName, grades, isMultiGrade: true });
+                  }
+              } else {
+                  onStartAssessment({ examinerName, grades: [{ grade: singleGrade, questions: numQuestions }], numQuestions, isMultiGrade: false });
+              }
+          };
+
+          const gradeOptions = [ {value: 'K', label: 'Kindergarten'}, ...[...Array(12)].map((_, i) => ({ value: (i + 1).toString(), label: `Grade ${i + 1}`})) ];
 
           return (
             <div className="space-y-8">
-                <div className="text-center p-3 bg-[#8B87A1]/50 text-[#C3B1E1] rounded-lg">
-                  <p className="font-semibold">{new Date().toLocaleDateString('en-US', {
-                      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-                    })}</p>
-                </div>
                 <h2 className="text-2xl font-bold text-center">Assessment Setup</h2>
-                
-                {/* Student Name Input (Disabled for FERPA) */}
-                <div className="flex flex-col space-y-2">
-                  <label htmlFor="student-name" className="text-lg font-semibold">Student Name</label>
-                  <input
-                    id="student-name"
-                    type="text"
-                    disabled
-                    value="FERPA compliant: No student names entered. Please add manually to the exported PDF."
-                    className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#6B7280] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]"
-                  />
-                </div>
-
-                {/* Examiner Input */}
                 <div className="flex flex-col space-y-2">
                   <label htmlFor="examiner" className="text-lg font-semibold">Examiner Name</label>
-                  <input
-                    id="examiner"
-                    type="text"
-                    value={examinerName}
-                    onChange={(e) => setExaminerName(e.target.value)}
-                    className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]"
-                    placeholder="Enter examiner's name"
-                  />
+                  <input id="examiner" type="text" value={examinerName} onChange={(e) => setExaminerName(e.target.value)} className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]" placeholder="Enter examiner's name" />
                 </div>
-
-                {/* Single Grade Level Setup */}
+                
                 <div className={`flex flex-col space-y-2 ${isMultiGrade ? 'hidden' : ''}`}>
                   <label htmlFor="grade-level" className="text-lg font-semibold">Grade Level</label>
-                  <select
-                    id="grade-level"
-                    value={gradeLevel}
-                    onChange={(e) => setGradeLevel(e.target.value)}
-                    className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]"
-                  >
-                    {[...Array(12)].map((_, i) => (
-                      <option key={i} value={i + 1}>Grade {i + 1}</option>
-                    ))}
+                  <select id="grade-level" value={singleGrade} onChange={(e) => setSingleGrade(e.target.value)} className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]">
+                    {gradeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                   </select>
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <input
-                    id="multi-grade"
-                    type="checkbox"
-                    checked={isMultiGrade}
-                    onChange={(e) => setIsMultiGrade(e.target.checked)}
-                    className="w-5 h-5 accent-[#DA70D6] rounded"
-                  />
+                  <input id="multi-grade" type="checkbox" checked={isMultiGrade} onChange={(e) => setIsMultiGrade(e.target.checked)} className="w-5 h-5 accent-[#DA70D6] rounded"/>
                   <label htmlFor="multi-grade" className="text-lg font-semibold">Select multiple grade levels</label>
                 </div>
 
-                {/* Multiple Grade Level Setup */}
                 {isMultiGrade ? (
                   <div className="bg-[#8B87A1]/40 p-6 rounded-lg space-y-4">
-                    <h3 className="text-xl font-semibold text-[#dee2e6]">Questions by Grade Level (Questions Left: {questionsLeft})</h3>
-                    <p className="text-sm italic text-[#AEA2A6]">Note: You do not need to use all 10 questions.</p>
+                    <h3 className="text-xl font-semibold text-[#dee2e6]">Questions by Grade Level (Left: {questionsLeft})</h3>
                     {multiGrades.map(item => (
                       <div key={item.id} className="flex items-center space-x-4">
-                        <label className="text-lg font-medium">Grade</label>
-                        <select
-                          value={item.grade}
-                          onChange={(e) => handleMultiGradeChange(item.id, 'grade', e.target.value)}
-                          className="p-2 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]"
-                        >
-                          {[...Array(12)].map((_, i) => (
-                            <option key={i} value={i + 1}>Grade {i + 1}</option>
-                          ))}
+                        <select value={item.grade} onChange={(e) => handleMultiGradeChange(item.id, 'grade', e.target.value)} className="p-2 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6]">
+                          {gradeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
                         <label className="text-lg font-medium">Questions</label>
-                        <input
-                          type="number"
-                          value={item.questions}
-                          onChange={(e) => {
-                            const newValue = Math.min(parseInt(e.target.value) || 0, 10 - (totalQuestions - parseInt(item.questions)));
-                            handleMultiGradeChange(item.id, 'questions', newValue);
-                          }}
-                          min="0"
-                          max="10"
-                          className="w-20 p-2 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]"
-                        />
+                        <input type="number" value={item.questions} onChange={(e) => { const val = Math.max(0, parseInt(e.target.value) || 0); handleMultiGradeChange(item.id, 'questions', val); }} min="0" className="w-20 p-2 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6]"/>
                       </div>
                     ))}
-                    <p className={`text-sm font-semibold ${questionsLeft < 0 ? 'text-red-400' : 'text-[#dee2e6]'}`}>Total Questions: {totalQuestions}/10</p>
+                    <p className={`text-sm font-semibold ${questionsLeft < 0 ? 'text-red-400' : 'text-[#dee2e6]'}`}>Total Questions: {totalMultiQuestions}/10</p>
                   </div>
                 ) : (
                   <div className="flex flex-col space-y-2">
                     <label htmlFor="num-questions" className="text-lg font-semibold">Number of Questions (max 10)</label>
-                    <input
-                      id="num-questions"
-                      type="number"
-                      value={numQuestions}
-                      onChange={(e) => setNumQuestions(Math.min(e.target.value, 10))}
-                      min="1"
-                      max="10"
-                      className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]"
-                    />
+                    <input id="num-questions" type="number" value={numQuestions} onChange={(e) => setNumQuestions(Math.max(1, Math.min(10, e.target.value)))} min="1" max="10" className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6]"/>
                   </div>
                 )}
                 
-                <button
-                  onClick={onStartAssessment}
-                  disabled={totalQuestions > 10 || (isMultiGrade && totalQuestions === 0)}
-                  className={`w-full py-4 bg-[#DA70D6] rounded-lg font-bold text-lg hover:bg-[#C3B1E1] transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  Start Assessment
-                </button>
+                <button onClick={handleStart} disabled={(isMultiGrade && (totalMultiQuestions === 0 || totalMultiQuestions > 10)) || !examinerName} className={`w-full py-4 bg-[#DA70D6] rounded-lg font-bold text-lg hover:bg-[#C3B1E1] transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}> Start Assessment </button>
             </div>
           );
         };
 
-        // --- Other Screen Components (placeholders) ---
-        const MainAppScreen = ({ onSubmit }) => {
-          return (
-            <div className="space-y-8 text-center">
-              <h2 className="text-2xl font-semibold text-[#dee2e6]">Main Application Screen</h2>
-              <p className="text-[#AEA2A6]">This is where the main task of your app will happen. The app will proceed to this screen after the tutorial.</p>
-              <button onClick={onSubmit} className="w-full md:w-auto px-12 py-4 bg-[#DA70D6] text-white font-bold text-lg rounded-lg shadow-md hover:bg-[#C3B1E1] focus:outline-none focus:ring-4 focus:ring-[#C3B1E1] transition-transform transform hover:scale-105">
-                Submit
-              </button>
-            </div>
-          );
+        // --- Main Assessment Screen ---
+        const MainAppScreen = ({ onSubmit, settings }) => {
+            const [questions, setQuestions] = useState([]);
+            const [currentQIndex, setCurrentQIndex] = useState(0);
+            const [currentSentence, setCurrentSentence] = useState([]);
+            const [shuffledWords, setShuffledWords] = useState([]);
+            const [completedSentences, setCompletedSentences] = useState([]);
+            const [shake, setShake] = useState(false);
+            
+            const [score, setScore] = useState(0);
+            const [totalPossibleScore, setTotalPossibleScore] = useState(0);
+            const [struggledTypes, setStruggledTypes] = useState({ Interrogative: 0, Negative: 0 });
+            const [assessmentLog, setAssessmentLog] = useState([]);
+
+            useEffect(() => {
+                let questionPool = [];
+                if (settings.isMultiGrade) {
+                    settings.grades.forEach(({ grade, questions: count }) => {
+                        const gradeQuestions = allQuestions.filter(q => q.grade === grade);
+                        questionPool.push(...shuffleArray(gradeQuestions).slice(0, count));
+                    });
+                } else {
+                    const gradeQuestions = allQuestions.filter(q => q.grade === settings.grades[0].grade);
+                    questionPool = shuffleArray(gradeQuestions).slice(0, settings.numQuestions);
+                }
+                
+                const finalQuestions = shuffleArray(questionPool);
+                setQuestions(finalQuestions);
+                setTotalPossibleScore(finalQuestions.reduce((acc, q) => acc + q.required, 0));
+            }, [settings]);
+
+            useEffect(() => {
+                if (questions.length > 0 && currentQIndex < questions.length) {
+                    const currentQuestion = questions[currentQIndex];
+                    setShuffledWords(shuffleArray([...currentQuestion.words]));
+                    setCurrentSentence([]);
+                    setCompletedSentences([]);
+                }
+            }, [currentQIndex, questions]);
+
+            const currentQuestion = questions[currentQIndex];
+
+            const handleWordClick = (word) => {
+                setCurrentSentence(prev => [...prev, word]);
+                setShuffledWords(prev => prev.filter(w => w !== word));
+            };
+
+            const handleCheck = () => {
+                const sentenceText = currentSentence.join(' ');
+                const isCorrect = currentQuestion.correct.includes(sentenceText) && !completedSentences.includes(sentenceText);
+                
+                if (isCorrect) {
+                    setScore(s => s + 1);
+                    setCompletedSentences(prev => [...prev, sentenceText]);
+                } else {
+                    setShake(true);
+                    setTimeout(() => setShake(false), 500);
+                    
+                    currentQuestion.types.forEach(type => {
+                        if (type === 'Interrogative' || type === 'Negative') {
+                            setStruggledTypes(prev => ({ ...prev, [type]: prev[type] + 1 }));
+                        }
+                    });
+                }
+                handleReset();
+            };
+            
+            const handleReset = () => {
+                setCurrentSentence([]);
+                setShuffledWords(shuffleArray([...currentQuestion.words]));
+            };
+
+            const handleNextQuestion = () => {
+                const logEntry = {
+                    question: currentQuestion,
+                    correctlyFormed: completedSentences,
+                    score: `${completedSentences.length}/${currentQuestion.required}`
+                };
+                setAssessmentLog(prev => [...prev, logEntry]);
+
+                if (currentQIndex < questions.length - 1) {
+                    setCurrentQIndex(prev => prev + 1);
+                } else {
+                    onSubmit({
+                        settings,
+                        finalScore: score,
+                        totalPossible: totalPossibleScore,
+                        struggledTypes,
+                        log: [...assessmentLog, logEntry]
+                    });
+                }
+            };
+            
+            if (!currentQuestion) return <div className="text-center"><IconSpinner className="animate-spin h-8 w-8 mx-auto" /></div>;
+
+            const sentencesNeeded = currentQuestion.required - completedSentences.length;
+
+            return (
+                <div className="space-y-6">
+                    <div className="text-center p-3 bg-[#8B87A1]/50 text-[#C3B1E1] rounded-lg flex justify-between items-center">
+                        <p className="font-semibold">Question {currentQIndex + 1} of {questions.length}</p>
+                        <p className="font-bold text-lg">Score: {score}</p>
+                    </div>
+
+                    <div className="text-center">
+                        <h2 className="text-xl font-bold text-[#dee2e6]">
+                            Make {currentQuestion.required} correct sentence{currentQuestion.required > 1 ? 's' : ''}.
+                        </h2>
+                        {sentencesNeeded > 0 ? 
+                            <p className="text-[#C3B1E1]">You still need to make {sentencesNeeded} more.</p> :
+                            <p className="text-green-400 font-bold">Great! You can move to the next question.</p>
+                        }
+                    </div>
+
+                    <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 ${shake ? 'shake' : ''}`}>
+                        {currentSentence.map((word, i) => <span key={i} className="px-3 py-2 bg-[#AEA2A6]/50 text-[#5B4B62] rounded-lg shadow-sm font-semibold">{word}</span>)}
+                    </div>
+                    
+                    <div className="p-4 rounded-lg flex flex-wrap justify-center gap-2 bg-[#8B87A1]/50 min-h-[6rem]">
+                        {shuffledWords.map((word, i) => (
+                            <button key={i} onClick={() => handleWordClick(word)} className="word-box px-4 py-2 bg-[#AEA2A6]/50 text-[#dee2e6] rounded-lg shadow-sm font-semibold hover:bg-[#C3B1E1]">
+                                {word}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex items-center justify-center space-x-4 mt-6">
+                        <button onClick={handleCheck} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition" title="Check Sentence"><IconCheck /></button>
+                        <button onClick={handleReset} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition" title="Reset Words"><IconReset /></button>
+                        <button onClick={handleNextQuestion} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition disabled:opacity-50 disabled:cursor-not-allowed" title="Next Question" disabled={sentencesNeeded > 0 && currentQIndex < questions.length - 1}>
+                           <IconNext />
+                        </button>
+                    </div>
+                </div>
+            );
         };
         
-        const ResultsScreen = ({ onRestart }) => {
-          return (
-            <div className="space-y-8 text-center">
-              <h2 className="text-2xl font-semibold text-[#dee2e6]">Results Screen</h2>
-              <p className="text-[#AEA2A6]">This is where you'll display scores, reports, and provide options to export data or start over.</p>
-               <button onClick={onRestart} className="w-full md:w-auto px-12 py-4 bg-[#DA70D6] text-white font-bold text-lg rounded-lg shadow-md hover:bg-[#C3B1E1] focus:outline-none focus:ring-4 focus:ring-[#C3B1E1] transition-transform transform hover:scale-105">
-                 Start New
-               </button>
-            </div>
-          );
+        // --- Results Screen ---
+        const ResultsScreen = ({ onRestart, results }) => {
+            const handleExport = () => {
+                const { settings, finalScore, totalPossible, struggledTypes, log } = results;
+                const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                const scorePercentage = totalPossible > 0 ? ((finalScore / totalPossible) * 100).toFixed(0) : 0;
+
+                const reportHTML = `
+                    <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Grammar Grid Report</title>
+                    <style>
+                        body { font-family: sans-serif; background-color: #5B4B62; color: #dee2e6; line-height: 1.6; margin: 0; padding: 20px; }
+                        .container { max-width: 800px; margin: auto; padding: 20px; background-color: #8B87A1; border-radius: 12px; border: 1px solid #AEA2A6; }
+                        header { text-align: center; border-bottom: 1px solid #AEA2A6; padding-bottom: 15px; margin-bottom: 25px; }
+                        header img { max-width: 120px; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
+                        h1 { color: #DA70D6; margin: 0; } h2 { color: #C3B1E1; border-bottom: 1px solid #AEA2A6; padding-bottom: 8px; margin-top: 25px; }
+                        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background-color: #5B4B62; padding: 15px; border-radius: 8px; }
+                        .info-grid p { margin: 0; } .info-grid strong { color: #C3B1E1; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #AEA2A6; }
+                        th { background-color: #5B4B62; }
+                        .total-row { font-weight: bold; color: #DA70D6; }
+                        .question-block { margin-top: 15px; padding: 10px; background-color: #5B4B62; border-radius: 8px; }
+                        .word-bank { font-style: italic; color: #C3B1E1; }
+                        .user-answer { margin-left: 20px; }
+                        .correct { color: #6ee7b7; } .incorrect { color: #f87171; }
+                    </style></head><body>
+                    <div class="container">
+                        <header>
+                            <img src="https://raw.githubusercontent.com/navasdo/grammar-grid/refs/heads/main/navacite-gg.png" alt="Grammar Grid Gem">
+                            <h1>Assessment Report</h1>
+                        </header>
+                        <section>
+                            <h2>Summary</h2>
+                            <div class="info-grid">
+                                <p><strong>Student Name:</strong> _______________________</p>
+                                <p><strong>Examiner:</strong> ${settings.examinerName}</p>
+                                <p><strong>Date:</strong> ${date}</p>
+                            </div>
+                        </section>
+                        <section>
+                            <h2>Scores</h2>
+                            <table>
+                                <thead><tr><th>Category</th><th>Score</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Interrogative Errors</td><td>${struggledTypes.Interrogative}</td></tr>
+                                    <tr><td>Negative Errors</td><td>${struggledTypes.Negative}</td></tr>
+                                    <tr class="total-row"><td>Total Score</td><td>${finalScore}/${totalPossible} (${scorePercentage}%)</td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+                        <section>
+                            <h2>Details</h2>
+                            ${log.map((entry, index) => `
+                                <div class="question-block">
+                                    <p><strong>Question ${index + 1}:</strong> Make ${entry.question.required} sentence(s).</p>
+                                    <p class="word-bank">Words: ${entry.question.words.join(', ')}</p>
+                                    <p><strong>Correct Possible Answers:</strong></p>
+                                    <ul>${entry.question.correct.map(c => `<li>${c}</li>`).join('')}</ul>
+                                    <p><strong>Student's Correct Sentences:</strong> 
+                                        <span class="${entry.correctlyFormed.length === entry.question.required ? 'correct' : 'incorrect'}">
+                                            (${entry.score})
+                                        </span>
+                                    </p>
+                                    ${entry.correctlyFormed.length > 0 ? `<ul>${entry.correctlyFormed.map(s => `<li>${s}</li>`).join('')}</ul>` : '<p>No correct sentences formed.</p>'}
+                                </div>
+                            `).join('')}
+                        </section>
+                    </div></body></html>
+                `;
+
+                const blob = new Blob([reportHTML], { type: 'text/html' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `Grammar-Grid-Report_${date}.html`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            if (!results) return <div>Loading results...</div>;
+
+            const { settings, finalScore, totalPossible, struggledTypes } = results;
+            const scorePercentage = totalPossible > 0 ? ((finalScore / totalPossible) * 100).toFixed(0) : 0;
+
+            return (
+                <div className="space-y-6 text-center">
+                    <h2 className="text-3xl font-bold text-white">Assessment Complete</h2>
+                    <div className="p-6 bg-[#8B87A1]/60 rounded-lg text-left max-w-md mx-auto">
+                        <p className="text-lg"><strong className="text-[#C3B1E1]">Examiner:</strong> {settings.examinerName}</p>
+                        <p className="text-lg"><strong className="text-[#C3B1E1]">Final Score:</strong> <span className="font-bold text-2xl text-[#DA70D6]">{finalScore}/{totalPossible}</span> ({scorePercentage}%)</p>
+                        <p className="text-lg"><strong className="text-[#C3B1E1]">Interrogative Errors:</strong> {struggledTypes.Interrogative}</p>
+                        <p className="text-lg"><strong className="text-[#C3B1E1]">Negative Errors:</strong> {struggledTypes.Negative}</p>
+                    </div>
+                    <div className="flex justify-center items-center space-x-4">
+                        <button onClick={handleExport} className="flex items-center space-x-2 px-6 py-3 bg-[#DA70D6] rounded-lg font-bold hover:bg-[#C3B1E1] transition">
+                           <IconExport />
+                           <span>Export Report</span>
+                        </button>
+                        <button onClick={onRestart} className="px-6 py-3 bg-[#DA70D6] rounded-lg font-bold hover:bg-[#C3B1E1] transition">
+                           New Assessment
+                        </button>
+                    </div>
+                </div>
+            );
         };
 
         const container = document.getElementById('root');
@@ -532,3 +515,4 @@
     </script>
 </body>
 </html>
+
