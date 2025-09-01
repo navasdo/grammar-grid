@@ -25,6 +25,14 @@
             user-select: none;
             transition: transform 0.2s, background-color 0.2s;
         }
+        @keyframes glowing-border {
+            0% { box-shadow: 0 0 10px #DA70D6, 0 0 20px #DA70D6; }
+            50% { box-shadow: 0 0 20px #C3B1E1, 0 0 40px #C3B1E1; }
+            100% { box-shadow: 0 0 10px #DA70D6, 0 0 20px #DA70D6; }
+        }
+        .glow {
+            animation: glowing-border 1.5s ease-in-out forwards;
+        }
     </style>
 </head>
 <body>
@@ -152,6 +160,7 @@
           const [sentencesCompleted, setSentencesCompleted] = useState(0);
           const [shake, setShake] = useState(false);
           const [showPopup, setShowPopup] = useState(true);
+          const [isGlowing, setIsGlowing] = useState(false);
 
           const audioRef = useRef({});
 
@@ -201,8 +210,14 @@
                     handleReset();
                 });
               } else {
-                playAudio(audioRef.current.finished, () => {
-                    onStartAssessment();
+                setIsGlowing(true);
+                playAudio(audioRef.current.twoOutOfTwo, () => {
+                  setTimeout(() => {
+                    setIsGlowing(false);
+                    playAudio(audioRef.current.finished, () => {
+                      onStartAssessment();
+                    });
+                  }, 1500);
                 });
               }
             } else {
@@ -237,6 +252,7 @@
             audioRef.current.statement = new Audio("audio/statement.wav");
             audioRef.current.question = new Audio("audio/question.wav");
             audioRef.current.finished = new Audio("audio/finished.wav");
+            audioRef.current.twoOutOfTwo = new Audio("audio/2_out_of_2.wav");
           }, []);
 
           // --- DATE LOGIC ---
@@ -282,7 +298,7 @@
               </div>
 
               {/* Sentence construction area */}
-              <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 transition-all duration-300 ${shake ? 'shake' : ''}`}>
+              <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 transition-all duration-300 ${shake ? 'shake' : ''} ${isGlowing ? 'glow' : ''}`}>
                 {sentence.length > 0 ? formattedSentences : <span className="text-sm text-[#aea2a6] italic">Click words below to build your sentence...</span>}
               </div>
 
