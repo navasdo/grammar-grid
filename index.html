@@ -4289,7 +4289,7 @@
           return ( <div className="space-y-8"> {showPopup && ( <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-40"> <div className="bg-[#5B4B62] p-8 rounded-2xl shadow-lg border border-[#AEA2A6] text-center max-w-sm"> <p className="font-bold text-lg mb-4">Begin with tutorial? (Audio Required)</p> <div className="flex justify-center space-x-4"> <button onClick={() => { setShowPopup(false); playAudio(audioRef.current.tutorial, null); setIsWordBoxAnimated(true); setTimeout(() => setIsWordBoxAnimated(false), 2000); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> Yes </button> <button onClick={() => { setShowPopup(false); onStartAssessment(); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> No </button> </div> </div> </div> )} <div className="text-center p-3 bg-[#8B87A1]/50 text-[#C3B1E1] rounded-lg"> <p className="font-semibold">{currentDate}</p> </div> <div className="text-center"> <h2 className="text-2xl font-bold text-[#dee2e6]">Tutorial</h2> </div> <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 transition-all duration-300 ${shake ? 'shake' : ''} ${isGlowing ? 'glow' : ''}`}> {sentence.length > 0 ? formattedSentences : <span className="text-sm text-[#aea2a6] italic">Click words below to build your sentence...</span>} </div> <div className="p-4 rounded-lg flex flex-wrap justify-center gap-2 bg-[#8B87A1]/50"> {getRemainingWords().map(word => ( <button key={word.id} onClick={() => handleWordClick(word.id)} className={`word-box px-4 py-2 bg-[#AEA2A6]/50 text-[#dee2e6] rounded-lg shadow-sm font-semibold ${isWordBoxAnimated ? 'animate' : ''}`}> {word.text} </button> ))} </div> <div className="flex items-center justify-center space-x-4 mt-8"> <button onClick={handleCheck} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition-transform transform hover:scale-105"> <IconCheck /> </button> <div className="flex flex-col items-center"> <span className={`text-xl font-bold ${getScoreColor()}`}> {sentencesCompleted}/2 </span> <p className="text-sm text-[#aea2a6] italic">Score</p> </div> <button onClick={handleReset} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition-transform transform hover:scale-105"> <IconReset /> </button> <button onClick={handlePass} className="px-6 py-4 bg-[#DA70D6] rounded-lg text-white font-bold hover:bg-[#C3B1E1] transition"> Pass </button> </div> </div> );
         };
         
-        // --- Assessment Setup Screen ---
+// --- Assessment Setup Screen ---
         const AssessmentSetupScreen = ({ onStartAssessment }) => {
           const [examinerName, setExaminerName] = useState('');
           const [studentName, setStudentName] = useState('');
@@ -4337,7 +4337,7 @@
                   <select id="grade-level" value={singleGrade} onChange={(e) => setSingleGrade(e.target.value)} className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]">
                     {gradeOptions.map(opt => {
                         const gradeNum = parseInt(opt.value, 10);
-                        const isDisabled = gradeNum >= 3;
+                        const isDisabled = gradeNum >= 6;
                         return (
                             <option key={opt.value} value={opt.value} disabled={isDisabled}>
                                 {opt.label}{isDisabled ? ' (coming soon...)' : ''}
@@ -4360,7 +4360,7 @@
                         <select value={item.grade} onChange={(e) => handleMultiGradeChange(item.id, 'grade', e.target.value)} className="p-2 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6]">
                           {gradeOptions.map(opt => {
                             const gradeNum = parseInt(opt.value, 10);
-                            const isDisabled = gradeNum >= 3;
+                            const isDisabled = gradeNum >= 6;
                             return (
                                 <option key={opt.value} value={opt.value} disabled={isDisabled}>
                                     {opt.label}{isDisabled ? ' (coming soon...)' : ''}
