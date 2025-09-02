@@ -4265,7 +4265,7 @@
           );
         }
 
-        // --- Tutorial Screen ---
+       // --- Tutorial Screen ---
         const TutorialScreen = ({ onStartAssessment }) => {
           const [words, setWords] = useState([ { id: 1, text: "tasty", inSentence: false }, { id: 2, text: "the ice cream", inSentence: false }, { id: 3, text: "is", inSentence: false } ]);
           const [sentence, setSentence] = useState([]);
@@ -4280,40 +4280,62 @@
           
           const normalize = (str) => str.toLowerCase().replace(/[.,!?]/g, '').trim();
 
+          useEffect(() => { 
+              audioRef.current.tutorial = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/tutorial.wav");
+              audioRef.current.statement = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/statement.wav");
+              audioRef.current.question = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/question.wav");
+              audioRef.current.finished = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/finished.wav"); 
+              audioRef.current.correctAnswerSound = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/2_out_of_2.wav"); 
+              audioRef.current.incorrect = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/incorrect.wav"); 
+          }, []);
+
+          const playAudio = (audioElement, onEnded) => { if (audioElement) { audioElement.onended = onEnded; audioElement.play().catch(e => console.error("Audio playback failed:", e)); } };
+          
+          const handleReset = () => { 
+              setSentence([]); 
+              setWords(words.map(w => ({ ...w, inSentence: false }))); 
+          };
+
           const handleCheck = () => {
               if (sentence.length === 0) return;
               const userSentenceText = sentence.map(w => w.text).join(' ');
               const normalizedUserSentence = normalize(userSentenceText);
-
               const isCorrect = correctAnswers.includes(normalizedUserSentence) && !completedSentences.includes(userSentenceText);
 
               if (isCorrect) {
-                  playAudio(audioRef.current.correctAnswerSound);
-                  setIsCorrectGlow(true);
-                  setTimeout(() => setIsCorrectGlow(false), 1500);
-
                   const newCompleted = [...completedSentences, userSentenceText];
                   setCompletedSentences(newCompleted);
 
-                  if (newCompleted.length === correctAnswers.length) {
+                  if (newCompleted.length === 1) {
+                      setIsCorrectGlow(true);
+                      const audioToPlay = normalizedUserSentence === "the ice cream is tasty" ? audioRef.current.statement : audioRef.current.question;
+                      playAudio(audioToPlay, () => {
+                           setTimeout(() => {
+                            setIsCorrectGlow(false);
+                            handleReset();
+                           }, 500);
+                      });
+                  } else if (newCompleted.length === 2) {
                       setIsFinishedGlow(true);
-                      setTimeout(() => {
-                          setIsFinishedGlow(false);
-                          playAudio(audioRef.current.finished, onStartAssessment);
-                      }, 1500);
+                      playAudio(audioRef.current.correctAnswerSound, () => {
+                           setTimeout(() => {
+                               setIsFinishedGlow(false);
+                               playAudio(audioRef.current.finished, onStartAssessment);
+                           }, 1500);
+                      });
                   }
               } else {
                   setShake(true);
                   playAudio(audioRef.current.incorrect);
-                  setTimeout(() => setShake(false), 500);
+                  setTimeout(() => {
+                      setShake(false);
+                      handleReset();
+                  }, 500);
               }
-              handleReset();
           };
           
-          const playAudio = (audioElement, onEnded) => { if (audioElement) { audioElement.onended = onEnded; audioElement.play().catch(e => console.error("Audio playback failed:", e)); } };
-          const handleReset = () => { setSentence([]); setWords(words.map(w => ({ ...w, inSentence: false }))); };
           const handleWordClick = (wordId) => { const word = words.find(w => w.id === wordId); if (word && !word.inSentence) { setSentence(prev => [...prev, word]); setWords(prev => prev.map(w => w.id === wordId ? { ...w, inSentence: true } : w)); } };
-          useEffect(() => { audioRef.current.tutorial = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/tutorial.wav"); audioRef.current.finished = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/finished.wav"); audioRef.current.correctAnswerSound = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/2_out_of_2.wav"); audioRef.current.incorrect = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/incorrect.wav"); }, []);
+          
           const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
           const sentencesNeeded = correctAnswers.length - completedSentences.length;
 
