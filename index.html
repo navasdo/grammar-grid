@@ -256,7 +256,15 @@
                 <div className={`flex flex-col space-y-2 ${isMultiGrade ? 'hidden' : ''}`}>
                   <label htmlFor="grade-level" className="text-lg font-semibold">Grade Level</label>
                   <select id="grade-level" value={singleGrade} onChange={(e) => setSingleGrade(e.target.value)} className="p-3 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6] focus:outline-none focus:ring-2 focus:ring-[#C3B1E1]">
-                    {gradeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                    {gradeOptions.map(opt => {
+                        const gradeNum = parseInt(opt.value, 10);
+                        const isDisabled = gradeNum >= 3;
+                        return (
+                            <option key={opt.value} value={opt.value} disabled={isDisabled}>
+                                {opt.label}{isDisabled ? ' (coming soon...)' : ''}
+                            </option>
+                        );
+                    })}
                   </select>
                 </div>
                 
@@ -271,7 +279,15 @@
                     {multiGrades.map(item => (
                       <div key={item.id} className="flex items-center space-x-4">
                         <select value={item.grade} onChange={(e) => handleMultiGradeChange(item.id, 'grade', e.target.value)} className="p-2 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6]">
-                          {gradeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                          {gradeOptions.map(opt => {
+                            const gradeNum = parseInt(opt.value, 10);
+                            const isDisabled = gradeNum >= 3;
+                            return (
+                                <option key={opt.value} value={opt.value} disabled={isDisabled}>
+                                    {opt.label}{isDisabled ? ' (coming soon...)' : ''}
+                                </option>
+                            );
+                        })}
                         </select>
                         <label className="text-lg font-medium">Questions</label>
                         <input type="number" value={item.questions} onChange={(e) => { const val = Math.max(0, parseInt(e.target.value) || 0); handleMultiGradeChange(item.id, 'questions', val); }} min="0" className="w-20 p-2 rounded-lg bg-[#AEA2A6]/30 text-[#dee2e6] border border-[#AEA2A6]"/>
@@ -300,6 +316,7 @@
             const [completedSentences, setCompletedSentences] = useState([]);
             const [shake, setShake] = useState(false);
             const [isQuestionCompleteGlow, setIsQuestionCompleteGlow] = useState(false);
+            const [isCorrectGlow, setIsCorrectGlow] = useState(false);
             const audioRef = useRef({});
             
             const [score, setScore] = useState(0);
@@ -308,7 +325,7 @@
             const [assessmentLog, setAssessmentLog] = useState([]);
 
             useEffect(() => {
-                audioRef.current.allCorrect = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/2_out_of_2.wav");
+                audioRef.current.correctAnswerSound = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/2_out_of_2.wav");
             }, []);
 
             useEffect(() => {
@@ -363,9 +380,6 @@
             useEffect(() => {
                 if (currentQuestion && completedSentences.length > 0 && completedSentences.length === currentQuestion.required) {
                     setIsQuestionCompleteGlow(true);
-                    if (audioRef.current.allCorrect) {
-                       audioRef.current.allCorrect.play();
-                    }
 
                     const timer = setTimeout(() => {
                         setIsQuestionCompleteGlow(false);
@@ -390,6 +404,11 @@
                 const isCorrect = currentQuestion.correct.some(correctAnswer => normalize(correctAnswer) === normalizedUserSentence) && !completedSentences.includes(sentenceText);
                 
                 if (isCorrect) {
+                    if (audioRef.current.correctAnswerSound) {
+                        audioRef.current.correctAnswerSound.play();
+                    }
+                    setIsCorrectGlow(true);
+                    setTimeout(() => setIsCorrectGlow(false), 1500);
                     setScore(s => s + 1);
                     setCompletedSentences(prev => [...prev, sentenceText]);
                 } else {
@@ -439,7 +458,7 @@
                          />
                     </div>
 
-                    <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 ${shake ? 'shake' : ''} ${isQuestionCompleteGlow ? 'glow' : ''}`}>
+                    <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 ${shake ? 'shake' : ''} ${isQuestionCompleteGlow || isCorrectGlow ? 'glow' : ''}`}>
                         {currentSentence.map((word, i) => <span key={i} className="px-3 py-2 bg-[#AEA2A6]/50 text-[#5B4B62] rounded-lg shadow-sm font-semibold">{word}</span>)}
                     </div>
                     
