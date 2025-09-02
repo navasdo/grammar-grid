@@ -4265,7 +4265,7 @@
           );
         }
 
-       // --- Tutorial Screen ---
+      // --- Tutorial Screen ---
         const TutorialScreen = ({ onStartAssessment }) => {
           const [words, setWords] = useState([ { id: 1, text: "tasty", inSentence: false }, { id: 2, text: "the ice cream", inSentence: false }, { id: 3, text: "is", inSentence: false } ]);
           const [sentence, setSentence] = useState([]);
@@ -4278,7 +4278,7 @@
           const audioRef = useRef({});
           const correctAnswers = [ "the ice cream is tasty", "is the ice cream tasty" ];
           
-          const normalize = (str) => str.toLowerCase().replace(/[.,!?]/g, '').trim();
+          const normalize = (str) => str.toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ").trim();
 
           useEffect(() => { 
               audioRef.current.tutorial = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/tutorial.wav");
@@ -4377,6 +4377,7 @@
             </div> 
           );
         };
+
         
         // --- Assessment Setup Screen ---
         const AssessmentSetupScreen = ({ onStartAssessment }) => {
@@ -4475,7 +4476,7 @@
           );
         };
 
-        // --- Main Assessment Screen ---
+// --- Main Assessment Screen ---
         const MainAppScreen = ({ onSubmit, settings }) => {
             const [questions, setQuestions] = useState([]);
             const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -4569,7 +4570,7 @@
                 setShuffledWords(prev => prev.filter(w => w !== word));
             };
             
-            const normalize = (str) => str.toLowerCase().replace(/[.,!?]/g, '').trim();
+            const normalize = (str) => str.toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ").trim();
 
             const handleCheck = () => {
                 const sentenceText = currentSentence.join(' ');
@@ -4650,6 +4651,7 @@
                 </div>
             );
         };
+
         
         // --- Results Screen ---
         const ResultsScreen = ({ onRestart, results }) => {
