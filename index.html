@@ -4265,31 +4265,98 @@
           );
         }
 
-        // --- Tutorial Screen (Unchanged)---
-        const TutorialScreen = ({ onStartAssessment, isLoading }) => {
+        // --- Tutorial Screen ---
+        const TutorialScreen = ({ onStartAssessment }) => {
           const [words, setWords] = useState([ { id: 1, text: "tasty", inSentence: false }, { id: 2, text: "the ice cream", inSentence: false }, { id: 3, text: "is", inSentence: false } ]);
           const [sentence, setSentence] = useState([]);
-          const [sentencesCompleted, setSentencesCompleted] = useState(0);
+          const [completedSentences, setCompletedSentences] = useState([]);
           const [shake, setShake] = useState(false);
           const [showPopup, setShowPopup] = useState(true);
-          const [isGlowing, setIsGlowing] = useState(false);
+          const [isCorrectGlow, setIsCorrectGlow] = useState(false);
+          const [isFinishedGlow, setIsFinishedGlow] = useState(false);
           const [isWordBoxAnimated, setIsWordBoxAnimated] = useState(false);
           const audioRef = useRef({});
-          const correctSentences = [ ["the ice cream", "is", "tasty"], ["is", "the ice cream", "tasty"] ];
-          const formattedSentences = sentence.map((word, index) => ( <span key={index} className="px-3 py-2 bg-[#AEA2A6]/50 text-[#5B4B62] rounded-lg cursor-default shadow-sm font-semibold"> {word.text} </span> ));
-          const getScoreColor = () => { if (sentencesCompleted === 2) return 'text-green-500'; if (sentencesCompleted === 1) return 'text-orange-400'; return 'text-gray-400'; };
-          const getRemainingWords = () => words.filter(w => !w.inSentence);
-          const handleWordClick = (wordId) => { const word = words.find(w => w.id === wordId); if (word && !word.inSentence) { setSentence(prev => [...prev, word]); setWords(prev => prev.map(w => w.id === wordId ? { ...w, inSentence: true } : w)); } };
-          const handleCheck = () => { if (sentence.length === 0) return; const currentSentenceText = sentence.map(w => w.text).join(' '); const isCorrect = correctSentences.some(correct => correct.join(' ') === currentSentenceText); if (isCorrect) { const newSentencesCompleted = sentencesCompleted + 1; setSentencesCompleted(newSentencesCompleted); if (newSentencesCompleted === 1) { const audioToPlay = currentSentenceText === "the ice cream is tasty" ? audioRef.current.statement : audioRef.current.question; playAudio(audioToPlay, () => { handleReset(); }); } else { setIsGlowing(true); playAudio(audioRef.current.twoOutOfTwo, () => { setTimeout(() => { setIsGlowing(false); playAudio(audioRef.current.finished, () => { onStartAssessment(); }); }, 1500); }); } } else { setShake(true); playAudio(audioRef.current.incorrect, () => { setTimeout(() => { setShake(false); handleReset(); }, 1000); }); } };
+          const correctAnswers = [ "the ice cream is tasty", "is the ice cream tasty" ];
+          
+          const normalize = (str) => str.toLowerCase().replace(/[.,!?]/g, '').trim();
+
+          const handleCheck = () => {
+              if (sentence.length === 0) return;
+              const userSentenceText = sentence.map(w => w.text).join(' ');
+              const normalizedUserSentence = normalize(userSentenceText);
+
+              const isCorrect = correctAnswers.includes(normalizedUserSentence) && !completedSentences.includes(userSentenceText);
+
+              if (isCorrect) {
+                  playAudio(audioRef.current.correctAnswerSound);
+                  setIsCorrectGlow(true);
+                  setTimeout(() => setIsCorrectGlow(false), 1500);
+
+                  const newCompleted = [...completedSentences, userSentenceText];
+                  setCompletedSentences(newCompleted);
+
+                  if (newCompleted.length === correctAnswers.length) {
+                      setIsFinishedGlow(true);
+                      setTimeout(() => {
+                          setIsFinishedGlow(false);
+                          playAudio(audioRef.current.finished, onStartAssessment);
+                      }, 1500);
+                  }
+              } else {
+                  setShake(true);
+                  playAudio(audioRef.current.incorrect);
+                  setTimeout(() => setShake(false), 500);
+              }
+              handleReset();
+          };
+          
           const playAudio = (audioElement, onEnded) => { if (audioElement) { audioElement.onended = onEnded; audioElement.play().catch(e => console.error("Audio playback failed:", e)); } };
           const handleReset = () => { setSentence([]); setWords(words.map(w => ({ ...w, inSentence: false }))); };
-          const handlePass = () => { setSentencesCompleted(0); handleReset(); };
-          useEffect(() => { audioRef.current.tutorial = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/tutorial.wav"); audioRef.current.statement = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/statement.wav"); audioRef.current.question = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/question.wav"); audioRef.current.finished = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/finished.wav"); audioRef.current.twoOutOfTwo = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/2_out_of_2.wav"); audioRef.current.incorrect = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/incorrect.wav"); }, []);
+          const handleWordClick = (wordId) => { const word = words.find(w => w.id === wordId); if (word && !word.inSentence) { setSentence(prev => [...prev, word]); setWords(prev => prev.map(w => w.id === wordId ? { ...w, inSentence: true } : w)); } };
+          useEffect(() => { audioRef.current.tutorial = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/tutorial.wav"); audioRef.current.finished = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/finished.wav"); audioRef.current.correctAnswerSound = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/2_out_of_2.wav"); audioRef.current.incorrect = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/incorrect.wav"); }, []);
           const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-          return ( <div className="space-y-8"> {showPopup && ( <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-40"> <div className="bg-[#5B4B62] p-8 rounded-2xl shadow-lg border border-[#AEA2A6] text-center max-w-sm"> <p className="font-bold text-lg mb-4">Begin with tutorial? (Audio Required)</p> <div className="flex justify-center space-x-4"> <button onClick={() => { setShowPopup(false); playAudio(audioRef.current.tutorial, null); setIsWordBoxAnimated(true); setTimeout(() => setIsWordBoxAnimated(false), 2000); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> Yes </button> <button onClick={() => { setShowPopup(false); onStartAssessment(); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> No </button> </div> </div> </div> )} <div className="text-center p-3 bg-[#8B87A1]/50 text-[#C3B1E1] rounded-lg"> <p className="font-semibold">{currentDate}</p> </div> <div className="text-center"> <h2 className="text-2xl font-bold text-[#dee2e6]">Tutorial</h2> </div> <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 transition-all duration-300 ${shake ? 'shake' : ''} ${isGlowing ? 'glow' : ''}`}> {sentence.length > 0 ? formattedSentences : <span className="text-sm text-[#aea2a6] italic">Click words below to build your sentence...</span>} </div> <div className="p-4 rounded-lg flex flex-wrap justify-center gap-2 bg-[#8B87A1]/50"> {getRemainingWords().map(word => ( <button key={word.id} onClick={() => handleWordClick(word.id)} className={`word-box px-4 py-2 bg-[#AEA2A6]/50 text-[#dee2e6] rounded-lg shadow-sm font-semibold ${isWordBoxAnimated ? 'animate' : ''}`}> {word.text} </button> ))} </div> <div className="flex items-center justify-center space-x-4 mt-8"> <button onClick={handleCheck} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition-transform transform hover:scale-105"> <IconCheck /> </button> <div className="flex flex-col items-center"> <span className={`text-xl font-bold ${getScoreColor()}`}> {sentencesCompleted}/2 </span> <p className="text-sm text-[#aea2a6] italic">Score</p> </div> <button onClick={handleReset} className="p-4 bg-[#DA70D6] rounded-full text-white hover:bg-[#C3B1E1] transition-transform transform hover:scale-105"> <IconReset /> </button> <button onClick={handlePass} className="px-6 py-4 bg-[#DA70D6] rounded-lg text-white font-bold hover:bg-[#C3B1E1] transition"> Pass </button> </div> </div> );
+          const sentencesNeeded = correctAnswers.length - completedSentences.length;
+
+          return ( 
+            <div className="space-y-8"> 
+              {showPopup && ( 
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-40"> 
+                  <div className="bg-[#5B4B62] p-8 rounded-2xl shadow-lg border border-[#AEA2A6] text-center max-w-sm"> 
+                    <p className="font-bold text-lg mb-4">Begin with tutorial?</p> 
+                    <div className="flex justify-center space-x-4"> 
+                      <button onClick={() => { setShowPopup(false); playAudio(audioRef.current.tutorial, null); setIsWordBoxAnimated(true); setTimeout(() => setIsWordBoxAnimated(false), 2000); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> Yes </button> 
+                      <button onClick={() => { setShowPopup(false); onStartAssessment(); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> No </button> 
+                    </div> 
+                  </div> 
+                </div> 
+              )} 
+              <div className="text-center p-3 bg-[#8B87A1]/50 text-[#C3B1E1] rounded-lg"> <p className="font-semibold">{currentDate}</p> </div> 
+              <div className="text-center"> 
+                <h2 className="text-2xl font-bold text-[#dee2e6]">Tutorial</h2> 
+                <p className="text-[#C3B1E1]">Make {correctAnswers.length} correct sentences. You still need {sentencesNeeded} more.</p>
+              </div> 
+              <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 transition-all duration-300 ${shake ? 'shake' : ''} ${isCorrectGlow || isFinishedGlow ? 'glow' : ''}`}> 
+                {sentence.length > 0 ? sentence.map((word, i) => <span key={i} className="px-3 py-2 bg-[#AEA2A6]/50 text-[#5B4B62] rounded-lg shadow-sm font-semibold">{word.text}</span>) : <span className="text-sm text-[#aea2a6] italic">Click words below to build your sentence...</span>} 
+              </div> 
+              <div className="p-4 rounded-lg flex flex-wrap justify-center gap-2 bg-[#8B87A1]/50"> 
+                {words.filter(w => !w.inSentence).map(word => ( <button key={word.id} onClick={() => handleWordClick(word.id)} className={`word-box px-4 py-2 bg-[#AEA2A6]/50 text-[#dee2e6] rounded-lg shadow-sm font-semibold ${isWordBoxAnimated ? 'animate' : ''}`}> {word.text} </button> ))} 
+              </div> 
+              <div className="flex items-center justify-center space-x-4 mt-8"> 
+                <button onClick={handleCheck} className="flex items-center justify-center gap-2 px-5 py-3 bg-[#DA70D6] rounded-lg font-bold text-white hover:bg-[#C3B1E1] transition">
+                    <IconCheck />
+                    <span>Check Sentence</span>
+                </button>
+                <button onClick={handleReset} className="flex items-center justify-center gap-2 px-5 py-3 bg-[#DA70D6] rounded-lg font-bold text-white hover:bg-[#C3B1E1] transition">
+                    <IconReset />
+                    <span>Reset Blocks</span>
+                </button>
+                <button onClick={onStartAssessment} className="px-6 py-3 bg-[#DA70D6] rounded-lg text-white font-bold hover:bg-[#C3B1E1] transition"> Pass </button> 
+              </div> 
+            </div> 
+          );
         };
         
-// --- Assessment Setup Screen ---
+        // --- Assessment Setup Screen ---
         const AssessmentSetupScreen = ({ onStartAssessment }) => {
           const [examinerName, setExaminerName] = useState('');
           const [studentName, setStudentName] = useState('');
@@ -4386,7 +4453,7 @@
           );
         };
 
-           // --- Main Assessment Screen ---
+        // --- Main Assessment Screen ---
         const MainAppScreen = ({ onSubmit, settings }) => {
             const [questions, setQuestions] = useState([]);
             const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -4401,21 +4468,13 @@
             const [score, setScore] = useState(0);
             const [totalPossibleScore, setTotalPossibleScore] = useState(0);
             const [struggledTypes, setStruggledTypes] = useState({
-                "Active Declarative": 0,
-                "Interrogative": 0,
-                "Negative": 0,
-                "Subordinate Clause": 0,
-                "Participle Phrase": 0,
-                "Passive Declarative": 0,
-                "Perfect Verb Tense": 0,
-                "Prepositional Phrase": 0,
-                "Relative Clause": 0,
-                "Direct and Indirect Object": 0,
-                "Perfect Progressive Tense": 0,
-                "Infinitive Phrase as Subject": 0,
-                "Subjunctive Mood": 0,
-                "Infinitive Phrase": 0,
-                "Subordinate Clause as Subject": 0
+                "Active Declarative": 0, "Causative Verb": 0, "Commas in a Series": 0, "Coordinating Conjunction": 0,
+                "Correlative Conjunction": 0, "Direct and Indirect Object": 0, "Gerund as a Subject": 0,
+                "Infinitive Phrase": 0, "Infinitive Phrase as Subject": 0, "Interrogative": 0, "Negative": 0,
+                "Participle Phrase": 0, "Passive Declarative": 0, "Passive Interrogative": 0, "Passive Verb Form": 0,
+                "Perfect Progressive Tense": 0, "Perfect Verb Tense": 0, "Prepositional Phrase": 0,
+                "Progressive Verb Tense": 0, "Proper Noun": 0, "Relative Clause": 0, "Subjunctive Mood": 0,
+                "Subordinate Clause": 0, "Subordinate Clause as Subject": 0
             });
             const [assessmentLog, setAssessmentLog] = useState([]);
 
@@ -4475,12 +4534,10 @@
             useEffect(() => {
                 if (currentQuestion && completedSentences.length > 0 && completedSentences.length === currentQuestion.required) {
                     setIsQuestionCompleteGlow(true);
-
                     const timer = setTimeout(() => {
                         setIsQuestionCompleteGlow(false);
                         handleNextQuestion();
                     }, 2000);
-
                     return () => clearTimeout(timer);
                 }
             }, [completedSentences, currentQuestion, handleNextQuestion]);
@@ -4489,13 +4546,12 @@
                 setCurrentSentence(prev => [...prev, word]);
                 setShuffledWords(prev => prev.filter(w => w !== word));
             };
+            
+            const normalize = (str) => str.toLowerCase().replace(/[.,!?]/g, '').trim();
 
             const handleCheck = () => {
                 const sentenceText = currentSentence.join(' ');
-                
-                const normalize = (str) => str.toLowerCase().replace(/[.?]$/, '').trim();
                 const normalizedUserSentence = normalize(sentenceText);
-
                 const isCorrect = currentQuestion.correct.some(correctAnswer => normalize(correctAnswer) === normalizedUserSentence) && !completedSentences.includes(sentenceText);
                 
                 if (isCorrect) {
@@ -4509,14 +4565,9 @@
                 } else {
                     setShake(true);
                     setTimeout(() => setShake(false), 500);
-                    
-                    currentQuestion.types.forEach(type => {
-                        setStruggledTypes(prev => {
-                            if (prev.hasOwnProperty(type)) {
-                                return { ...prev, [type]: prev[type] + 1 };
-                            }
-                            return prev;
-                        });
+                    const allTypes = ["Active Declarative", ...currentQuestion.types];
+                    allTypes.forEach(type => {
+                        setStruggledTypes(prev => prev.hasOwnProperty(type) ? { ...prev, [type]: prev[type] + 1 } : prev);
                     });
                 }
                 handleReset();
@@ -4524,7 +4575,17 @@
             
             const handleReset = () => {
                 setCurrentSentence([]);
-                setShuffledWords(shuffleArray([...currentQuestion.words]));
+                if (currentQuestion) {
+                    setShuffledWords(shuffleArray([...currentQuestion.words]));
+                }
+            };
+
+            const handlePass = () => {
+                const allTypes = ["Active Declarative", ...currentQuestion.types];
+                allTypes.forEach(type => {
+                    setStruggledTypes(prev => prev.hasOwnProperty(type) ? { ...prev, [type]: prev[type] + 1 } : prev);
+                });
+                handleNextQuestion();
             };
 
             if (!currentQuestion) return <div className="text-center"><IconSpinner className="animate-spin h-8 w-8 mx-auto" /></div>;
@@ -4539,21 +4600,12 @@
                     </div>
 
                     <div className="text-center">
-                        <h2 className="text-xl font-bold text-[#dee2e6]">
-                            Make {currentQuestion.required} correct sentence{currentQuestion.required > 1 ? 's' : ''}.
-                        </h2>
-                        {sentencesNeeded > 0 ? 
-                            <p className="text-[#C3B1E1]">You still need to make {sentencesNeeded} more.</p> :
-                            <p className="text-green-400 font-bold">Great! Please wait for the next question.</p>
-                        }
+                        <h2 className="text-xl font-bold text-[#dee2e6]"> Make {currentQuestion.required} correct sentence{currentQuestion.required > 1 ? 's' : ''}. </h2>
+                        {sentencesNeeded > 0 ? <p className="text-[#C3B1E1]">You still need to make {sentencesNeeded} more.</p> : <p className="text-green-400 font-bold">Great! Please wait for the next question.</p>}
                     </div>
 
                     <div className="text-center my-2">
-                         <img 
-                            src="https://raw.githubusercontent.com/navasdo/grammar-grid/refs/heads/main/images/gg_blocks.png" 
-                            alt="Grammar Blocks"
-                            className={`w-48 mx-auto transition-all duration-500 ${isQuestionCompleteGlow ? 'image-glow' : ''}`} 
-                         />
+                         <img src="https://raw.githubusercontent.com/navasdo/grammar-grid/refs/heads/main/images/gg_blocks.png" alt="Grammar Blocks" className={`w-48 mx-auto transition-all duration-500 ${isQuestionCompleteGlow ? 'image-glow' : ''}`} />
                     </div>
 
                     <div className={`p-4 min-h-[6rem] border border-dashed border-[#AEA2A6] rounded-lg flex flex-wrap items-center justify-center gap-2 ${shake ? 'shake' : ''} ${isQuestionCompleteGlow || isCorrectGlow ? 'glow' : ''}`}>
@@ -4569,21 +4621,15 @@
                     </div>
 
                     <div className="flex items-center justify-center space-x-4 mt-6">
-                        <button onClick={handleCheck} className="flex items-center justify-center gap-2 px-5 py-3 bg-[#DA70D6] rounded-lg font-bold text-white hover:bg-[#C3B1E1] transition">
-                            <IconCheck />
-                            <span>Check Sentence</span>
-                        </button>
-                        <button onClick={handleReset} className="flex items-center justify-center gap-2 px-5 py-3 bg-[#DA70D6] rounded-lg font-bold text-white hover:bg-[#C3B1E1] transition">
-                            <IconReset />
-                            <span>Reset Blocks</span>
-                        </button>
+                        <button onClick={handleCheck} className="flex items-center justify-center gap-2 px-5 py-3 bg-[#DA70D6] rounded-lg font-bold text-white hover:bg-[#C3B1E1] transition"> <IconCheck /> <span>Check Sentence</span> </button>
+                        <button onClick={handleReset} className="flex items-center justify-center gap-2 px-5 py-3 bg-[#DA70D6] rounded-lg font-bold text-white hover:bg-[#C3B1E1] transition"> <IconReset /> <span>Reset Blocks</span> </button>
+                        <button onClick={handlePass} className="px-6 py-3 bg-[#DA70D6] rounded-lg text-white font-bold hover:bg-[#C3B1E1] transition"> Pass </button>
                     </div>
                 </div>
             );
         };
-
         
-        // --- // --- Results Screen ---
+        // --- Results Screen ---
         const ResultsScreen = ({ onRestart, results }) => {
             const handleExport = () => {
                 const { settings, finalScore, totalPossible, struggledTypes, log } = results;
