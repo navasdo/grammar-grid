@@ -4344,7 +4344,7 @@
               {showPopup && ( 
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-40"> 
                   <div className="bg-[#5B4B62] p-8 rounded-2xl shadow-lg border border-[#AEA2A6] text-center max-w-sm"> 
-                    <p className="font-bold text-lg mb-4">Begin with tutorial?</p> 
+                    <p className="font-bold text-lg mb-4">Begin with tutorial? (audio required)</p> 
                     <div className="flex justify-center space-x-4"> 
                       <button onClick={() => { setShowPopup(false); playAudio(audioRef.current.tutorial, null); setIsWordBoxAnimated(true); setTimeout(() => setIsWordBoxAnimated(false), 2000); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> Yes </button> 
                       <button onClick={() => { setShowPopup(false); onStartAssessment(); }} className="px-6 py-2 bg-[#DA70D6] rounded-lg font-semibold hover:bg-[#C3B1E1] transition"> No </button> 
