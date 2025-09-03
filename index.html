@@ -4501,6 +4501,17 @@
             });
             const [assessmentLog, setAssessmentLog] = useState([]);
 
+            const relevantTypes = useMemo(() => {
+                if (!questions || questions.length === 0) return [];
+                const types = new Set(["Active Declarative"]);
+                questions.forEach(q => {
+                    if (q.types && q.types.length > 0) {
+                        q.types.forEach(type => types.add(type));
+                    }
+                });
+                return Array.from(types);
+            }, [questions]);
+
             useEffect(() => {
                 audioRef.current.correctAnswerSound = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/2_out_of_2.wav");
             }, []);
@@ -4549,10 +4560,11 @@
                         finalScore: score,
                         totalPossible: totalPossibleScore,
                         struggledTypes,
-                        log: [...assessmentLog, logEntry]
+                        log: [...assessmentLog, logEntry],
+                        relevantTypes
                     });
                 }
-            }, [currentQIndex, questions, completedSentences, currentQuestion, assessmentLog, onSubmit, score, totalPossibleScore, struggledTypes, settings]);
+            }, [currentQIndex, questions, completedSentences, currentQuestion, assessmentLog, onSubmit, score, totalPossibleScore, struggledTypes, settings, relevantTypes]);
 
             useEffect(() => {
                 if (currentQuestion && completedSentences.length > 0 && completedSentences.length === currentQuestion.required) {
@@ -4656,11 +4668,12 @@
         // --- Results Screen ---
         const ResultsScreen = ({ onRestart, results }) => {
             const handleExport = () => {
-                const { settings, finalScore, totalPossible, struggledTypes, log } = results;
+                const { settings, finalScore, totalPossible, struggledTypes, log, relevantTypes } = results;
                 const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                 const scorePercentage = totalPossible > 0 ? ((finalScore / totalPossible) * 100).toFixed(0) : 0;
                 
                 const struggledTypesRows = Object.entries(struggledTypes)
+                    .filter(([type, count]) => relevantTypes.includes(type))
                     .map(([type, count]) => `<tr><td>${type} Errors</td><td>${count}</td></tr>`)
                     .join('');
 
@@ -4737,7 +4750,7 @@
 
             if (!results) return <div>Loading results...</div>;
 
-            const { settings, finalScore, totalPossible, struggledTypes } = results;
+            const { settings, finalScore, totalPossible, struggledTypes, relevantTypes } = results;
             const scorePercentage = totalPossible > 0 ? ((finalScore / totalPossible) * 100).toFixed(0) : 0;
 
             return (
@@ -4747,7 +4760,9 @@
                         <p className="text-lg"><strong className="text-[#C3B1E1]">Examiner:</strong> {settings.examinerName}</p>
                         <p className="text-lg"><strong className="text-[#C3B1E1]">Student:</strong> {settings.studentName || 'N/A'}</p>
                         <p className="text-lg"><strong className="text-[#C3B1E1]">Final Score:</strong> <span className="font-bold text-2xl text-[#DA70D6]">{finalScore}/{totalPossible}</span> ({scorePercentage}%)</p>
-                        {Object.entries(struggledTypes).map(([type, count]) => (
+                        {Object.entries(struggledTypes)
+                            .filter(([type, count]) => relevantTypes.includes(type))
+                            .map(([type, count]) => (
                             <p key={type} className="text-lg"><strong className="text-[#C3B1E1]">{type} Errors:</strong> {count}</p>
                         ))}
                     </div>
