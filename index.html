@@ -4489,7 +4489,7 @@
           );
         };
 
-// --- Main Assessment Screen ---
+        // --- Main Assessment Screen ---
         const MainAppScreen = ({ onSubmit, settings }) => {
             const [questions, setQuestions] = useState([]);
             const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -4544,6 +4544,7 @@
 
             useEffect(() => {
                 audioRef.current.correctAnswerSound = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/2_out_of_2.wav");
+                audioRef.current.incorrectSound = new Audio("https://raw.githubusercontent.com/navasdo/grammar-grid/main/audio/incorrect.wav");
             }, []);
 
             useEffect(() => {
@@ -4637,6 +4638,9 @@
                     setScore(s => s + 1);
                     setCompletedSentences(prev => [...prev, sentenceText]);
                 } else {
+                    if (audioRef.current.incorrectSound) {
+                        audioRef.current.incorrectSound.play();
+                    }
                     setShake(true);
                     setTimeout(() => setShake(false), 500);
                     const allTypes = ["Active Declarative", ...currentQuestion.types];
@@ -4871,4 +4875,5 @@
     </script>
 </body>
 </html>
+
 
